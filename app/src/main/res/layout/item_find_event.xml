@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="1.5dp"
+    android:layout_marginRight="1.5dp"
+    app:cardBackgroundColor="@color/colorWhite"
+    app:cardCornerRadius="@dimen/widget_size_5"
+    app:cardElevation="@dimen/widget_size_3"
+    app:cardPreventCornerOverlap="true">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorWhite">
+
+        <ImageView
+            android:id="@+id/imageview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/weather_bga"
+            app:layout_constraintDimensionRatio="5:3"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/widget_size_4"
+            android:paddingTop="@dimen/widget_size_10"
+            android:paddingBottom="@dimen/widget_size_3"
+            android:paddingRight="@dimen/widget_size_10"
+            android:textColor="@color/colorBlack"
+            android:textSize="@dimen/font_size_17"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/imageview" />
+
+        <TextView
+            android:id="@+id/desc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:paddingBottom="@dimen/widget_size_13"
+            android:paddingLeft="@dimen/widget_size_16"
+            android:paddingRight="@dimen/widget_size_7"
+            android:textColor="@color/colorTooltitle"
+            android:textSize="@dimen/font_size_14"
+            app:layout_constraintTop_toBottomOf="@id/title" />
+
+        <TextView
+            android:id="@+id/title_tag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorBlack"
+            android:paddingBottom="@dimen/widget_size_3"
+            android:paddingLeft="@dimen/widget_size_10"
+            android:paddingRight="@dimen/widget_size_10"
+            android:paddingTop="@dimen/widget_size_3"
+            android:textColor="@color/colorWhite" />
+    </android.support.constraint.ConstraintLayout>
+</android.support.v7.widget.CardView>

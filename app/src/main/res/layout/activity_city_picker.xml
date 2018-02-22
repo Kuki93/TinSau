@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorWhite"
+    tools:context="com.example.helpme.mvpandroid.module.weather.CityPickerActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorWhite"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="@style/AppTheme.PopupOverlay"
+        app:contentInsetStartWithNavigation="0dp"
+        app:navigationIcon="@drawable/ic_arrow_back_black_24dp" />
+
+    <View
+        android:id="@+id/toolbar_shadow"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/widget_size_6"
+        android:background="@drawable/toolbar_shadow"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <TextView
+        android:id="@+id/tv_hotCity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/widget_size_12"
+        android:layout_marginTop="@dimen/widget_size_20"
+        android:text="热门城市"
+        android:textColor="@color/colorGray"
+        android:textSize="@dimen/font_size_15"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <com.example.helpme.mvpandroid.widget.FlowLayout
+        android:id="@+id/fl_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/widget_size_12"
+        app:horizontalSpacing="@dimen/widget_size_14"
+        app:itemColor="@color/colorABlack"
+        app:itemSize="@dimen/font_size_14"
+        app:layout_constraintTop_toBottomOf="@id/tv_hotCity"
+        app:textPaddingH="@dimen/widget_size_20"
+        app:textPaddingV="@dimen/widget_size_3"
+        app:verticalSpacing="@dimen/widget_size_10" />
+
+    <TextView
+        android:id="@+id/tv_hotAttraction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/widget_size_12"
+        android:layout_marginTop="@dimen/widget_size_25"
+        android:text="热门景点"
+        android:textColor="@color/colorGray"
+        android:textSize="@dimen/font_size_15"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/fl_city" />
+
+    <com.example.helpme.mvpandroid.widget.FlowLayout
+        android:id="@+id/fl_attraction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/widget_size_12"
+        app:horizontalSpacing="@dimen/widget_size_14"
+        app:itemColor="@color/colorABlack"
+        app:itemSize="@dimen/font_size_14"
+        app:layout_constraintTop_toBottomOf="@id/tv_hotAttraction"
+        app:textPaddingH="@dimen/widget_size_20"
+        app:textPaddingV="@dimen/widget_size_3"
+        app:verticalSpacing="@dimen/widget_size_10" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_search"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/colorWhite"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+</android.support.constraint.ConstraintLayout>

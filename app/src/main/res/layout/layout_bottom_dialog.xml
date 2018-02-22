@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/colorWhite"
+    app:cardCornerRadius="@dimen/widget_size_5"
+    app:cardPreventCornerOverlap="true">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="@dimen/widget_size_12">
+
+        <TextView
+            android:id="@+id/edit_img_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_edit_image"
+            android:drawablePadding="@dimen/widget_size_6"
+            android:gravity="center_vertical"
+            android:text="@string/edit_image_1"
+            android:textSize="@dimen/font_size_15"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/edit_img_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/widget_size_20"
+            android:drawableLeft="@drawable/ic_puzz_image"
+            android:drawablePadding="@dimen/widget_size_6"
+            android:gravity="center_vertical"
+            android:text="@string/edit_image_2"
+            android:textSize="@dimen/font_size_15"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/edit_img_1" />
+
+        <TextView
+            android:id="@+id/edit_img_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/widget_size_20"
+            android:drawableLeft="@drawable/ic_cut_image"
+            android:drawablePadding="@dimen/widget_size_6"
+            android:gravity="center_vertical"
+            android:text="@string/edit_image_3"
+            android:textSize="@dimen/font_size_15"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/edit_img_2" />
+
+        <TextView
+            android:id="@+id/edit_img_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/widget_size_20"
+            android:drawableLeft="@drawable/ic_filter_image"
+            android:drawablePadding="@dimen/widget_size_6"
+            android:gravity="center_vertical"
+            android:text="@string/edit_image_4"
+            android:textSize="@dimen/font_size_15"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/edit_img_3" />
+
+        <TextView
+            android:id="@+id/edit_img_5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/widget_size_20"
+            android:drawableLeft="@drawable/ic_long_image"
+            android:drawablePadding="@dimen/widget_size_6"
+            android:gravity="center_vertical"
+            android:text="@string/edit_image_5"
+            android:textSize="@dimen/font_size_15"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/edit_img_4" />
+    </android.support.constraint.ConstraintLayout>
+</android.support.v7.widget.CardView>

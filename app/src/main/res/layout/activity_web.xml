@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.helpme.mvpandroid.base.WebActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?android:actionBarSize"
+        android:background="@color/colorTooltitle"
+        app:contentInsetStartWithNavigation="0dp"
+        app:navigationIcon="@drawable/ic_arrow_back_white_24dp"
+        app:titleTextColor="@color/colorWhite">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/toolbar_line"
+                android:layout_width="@dimen/widget_size_2"
+                android:layout_height="@dimen/widget_size_22"
+                android:layout_marginRight="@dimen/widget_size_12"
+                android:background="#55222222"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/toolbar_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/widget_size_10"
+                android:src="@drawable/ic_close_white"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/toolbar_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="@dimen/widget_size_18"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/font_size_14"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+
+    </android.support.v7.widget.Toolbar>
+
+    <im.delight.android.webview.AdvancedWebView
+        android:id="@+id/webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar" />
+
+    <include
+        android:visibility="gone"
+        layout="@layout/layout_load_error" />
+    
+    <android.support.v4.widget.ContentLoadingProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/widget_size_2"
+        android:layout_below="@id/toolbar"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/progress_horizontal" />
+</RelativeLayout>

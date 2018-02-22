@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Tin Sau</string>
+    <string name="title_activity_city_management">城市管理</string>
+    <string name="title_new">新闻</string>
+    <string name="title_image">图虫</string>
+    <string name="title_live">直播</string>
+    <string name="title_video">开眼</string>
+    <string name="title_person">我的</string>
+    <string name="string_image_recommend">推荐</string>
+    <string name="string_image_find">发现</string>
+    <string name="edit_image_1">编辑</string>
+    <string name="edit_image_2">拼图</string>
+    <string name="edit_image_3">切图</string>
+    <string name="edit_image_4">滤镜</string>
+    <string name="edit_image_5">生成长图</string>
+    <string name="load_failed">加载失败，请点击重试！</string>
+    <string name="load_empty">什么都没有，请点击重试！</string>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#F43333</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorFloat">#4372D8</color>
+
+    <color name="colorToolbarDefault">#00FFFFFF</color>
+    <color name="colorWhite">#FFFFFF</color>
+    <color name="colorBlack">#000000</color>
+    <color name="colorGray">#999999</color>
+    <color name="colorABlack">#BB333333</color>
+    <color name="colorline">#30999999</color>
+    <color name="colorAGray">#70999999</color>
+    <color name="colorDivider">#44CCCCCC </color>
+    <color name="colorCard">#99F3F3F3</color>
+    <color name="colorYellow">#FBB226</color>
+    <color name="weatherText">#FFFFFF</color>
+    <color name="suggesText">#CCFFFFFF</color>
+    <color name="typecolor">#7FEEEEEE</color>
+    <color name="lineWhite">#3FFFFFFF</color>
+    <color name="colorTooltitle">#333333</color>
+</resources>
