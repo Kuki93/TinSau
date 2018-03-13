@@ -22,6 +22,7 @@ import com.example.helpme.mvpandroid.entity.image.ExifIFD;
 import com.example.helpme.mvpandroid.entity.image.File;
 import com.example.helpme.mvpandroid.entity.image.IFD0;
 import com.example.helpme.mvpandroid.entity.image.ImageDetails;
+import com.example.helpme.mvpandroid.entity.image.ItemContent;
 import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.example.helpme.mvpandroid.entity.image.摘要;
 import com.example.helpme.mvpandroid.module.image.ImageModelImpl;
@@ -38,11 +39,12 @@ import java.util.List;
 public class PhotoViewPagerAdapter extends PagerAdapter implements ImageContract.ImageOkHttpCallBcak {
     
     private SparseArray<ImageDetailsRecyclerAdapter> mAdapters;
-    private PhotoGroup mPhotoGroup;
+    private ArrayList<PhotoGroup> mPhotoGroups;
     private Context mContext;
     private SparseArray<SoftReference<RecyclerView>> cacheView;
     private ImageModelImpl mImageModel;
     private int size;
+    private List<Integer> nums;
     
     private ImageContract.OnItemChildClickListener mOnItemChildClickListener;
     private ImageContract.OnDragPhototListener mOnDragPhototListener;
@@ -55,17 +57,50 @@ public class PhotoViewPagerAdapter extends PagerAdapter implements ImageContract
         mOnDragPhototListener = onDragPhototListener;
     }
     
-    public ZoomDragPhotoView getPhotoAdaper(int position) {
+    public RecyclerView getPhotoRecyclerView(int position) {
+        return  cacheView.get(position).get();
+    }
+    
+    
+    public ZoomDragPhotoView getPhotoView(int position) {
         return (ZoomDragPhotoView) mAdapters.get(position).getViewByPosition(0, R.id.photoview);
     }
     
-    public PhotoViewPagerAdapter(Context context, PhotoGroup mPhotoGroup) {
+    public PhotoViewPagerAdapter(ArrayList<PhotoGroup> photoGroups, Context context, List<Integer> nums, int size) {
+        mPhotoGroups = photoGroups;
         mContext = context;
-        this.mPhotoGroup = mPhotoGroup;
-        size = mPhotoGroup.getUrls().size();
-        cacheView = new SparseArray<>(size);
-        mAdapters = new SparseArray<>(size);
+        this.nums = nums;
+        this.size = size;
+        cacheView = new SparseArray<>();
+        mAdapters = new SparseArray<>();
         mImageModel = new ImageModelImpl();
+    }
+    
+    public void addNewData(ArrayList<PhotoGroup> photoGroups, int size) {
+        mPhotoGroups = photoGroups;
+        this.size = size;
+        notifyDataSetChanged();
+    }
+    
+    private PhotoGroup getGroupByPosition(int position) {
+        int count = nums.size();
+        for (int i = 0; i < count; i++) {
+            if (position < nums.get(i))
+                return mPhotoGroups.get(i);
+        }
+        return null;
+    }
+    
+    private ImageDetails getImageByPosition(int position) {
+        int count = nums.size();
+        for (int i = 0; i < count; i++) {
+            if (position < nums.get(i))
+                if (i == 0)
+                    return mPhotoGroups.get(i).getImages().get(position);
+                else
+                    return mPhotoGroups.get(i).getImages().get(position - nums.get(i - 1));
+        }
+        return null;
     }
     
     @NonNull
@@ -73,28 +108,25 @@ public class PhotoViewPagerAdapter extends PagerAdapter implements ImageContract
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
         RecyclerView mRecyclerView = cacheView.get(position) != null ? cacheView.get(position).get() : null;
         if (mRecyclerView == null) {
+            ImageDetails mImageDetails = getImageByPosition(position);
             StringBuilder url = new StringBuilder(GlobalConfig.TU_CHONG_RECOMMEND_BASE_URL);
-            url.append("images/").append(mPhotoGroup.getImg_ids().get(position)).append("/exif?").append(GlobalConfig.TU_CHONG_URL);
+            url.append("images/").append(mImageDetails.getImgId()).append("/exif?").append(GlobalConfig.TU_CHONG_URL);
             try {
                 mImageModel.okhttp_get(true, position, ExifBean.class, this, url.toString());
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            List<ImageDetails> mImageDetails = new ArrayList<>();
-            mImageDetails.add(new ImageDetails(mPhotoGroup.getUrls().get(position), null, null, 0, mPhotoGroup.getWidth
-                    (), mPhotoGroup.getHeight()));
-            if (mPhotoGroup.getTitle() != null)
-                mImageDetails.add(new ImageDetails(null, mPhotoGroup.getTitle(), null, 1, mPhotoGroup.getWidth
-                        (), mPhotoGroup.getHeight()));
-            if (mPhotoGroup.getContent() != null)
-                mImageDetails.add(new ImageDetails(null, mPhotoGroup.getContent(), null, 2, mPhotoGroup.getWidth
-                        (), mPhotoGroup.getHeight()));
-            mImageDetails.add(new ImageDetails(4));
+            List<ItemContent> contents = mImageDetails.getItems();
+            if (getGroupByPosition(position).getTitle() != null)
+                contents.add(new ItemContent(getGroupByPosition(position).getTitle(), null, 1));
+            if (getGroupByPosition(position).getContent() != null)
+                contents.add(new ItemContent(getGroupByPosition(position).getContent(), null, 2));
+            contents.add(new ItemContent(4));
             mRecyclerView = new RecyclerView(mContext);
             final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mContext);
             linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
             mRecyclerView.setLayoutManager(linearLayoutManager);
-            ImageDetailsRecyclerAdapter mAdapter = new ImageDetailsRecyclerAdapter(mImageDetails, position);
+            ImageDetailsRecyclerAdapter mAdapter = new ImageDetailsRecyclerAdapter(contents);
             mAdapter.bindToRecyclerView(mRecyclerView);
             cacheView.put(position, new SoftReference(mRecyclerView));
             mAdapters.put(position, mAdapter);
@@ -141,7 +173,7 @@ public class PhotoViewPagerAdapter extends PagerAdapter implements ImageContract
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            mAdapters.get(msg.arg1).addData(msg.arg2, (List<ImageDetails>) msg.obj);
+            mAdapters.get(msg.arg1).addData(msg.arg2, (List<ItemContent>) msg.obj);
         }
     };
     
@@ -154,34 +186,34 @@ public class PhotoViewPagerAdapter extends PagerAdapter implements ImageContract
         if (data != null && data instanceof ExifBean) {
             ExifBean exifBean = (ExifBean) data;
             if (exifBean.getResult().equals("SUCCESS")) {
-                List<ImageDetails> mImageDetails = new ArrayList<>();
+                List<ItemContent> contents = new ArrayList<>();
                 Exif exif = exifBean.getExif();
                 if (exif.get摘要() != null) {
-                    mImageDetails.add(new ImageDetails(null, "相机参数", null, 2));
+                    contents.add(new ItemContent("相机参数", null, 2));
                     for (摘要 摘要 : exif.get摘要()) {
-                        mImageDetails.add(new ImageDetails(null, 摘要.getContent(), 摘要.getDesc(), 3));
+                        contents.add(new ItemContent(摘要.getContent(), 摘要.getDesc(), 3));
                     }
                 }
                 if (exif.getFile() != null) {
-                    mImageDetails.add(new ImageDetails(null, "File", null, 2));
+                    contents.add(new ItemContent("File", null, 2));
                     for (File file : exif.getFile()) {
-                        mImageDetails.add(new ImageDetails(null, file.getContent(), file.getDesc(), 3));
+                        contents.add(new ItemContent(file.getContent(), file.getDesc(), 3));
                     }
                 }
                 if (exif.getIFD0() != null) {
-                    mImageDetails.add(new ImageDetails(null, "IFD0", null, 2));
+                    contents.add(new ItemContent("IFD0", null, 2));
                     for (IFD0 ifd0 : exif.getIFD0()) {
-                        mImageDetails.add(new ImageDetails(null, ifd0.getContent(), ifd0.getDesc(), 3));
+                        contents.add(new ItemContent(ifd0.getContent(), ifd0.getDesc(), 3));
                     }
                 }
                 if (exif.getExifIFD() != null) {
-                    mImageDetails.add(new ImageDetails(null, "ExifIFD", null, 2));
+                    contents.add(new ItemContent("ExifIFD", null, 2));
                     for (ExifIFD exifIFD : exif.getExifIFD()) {
-                        mImageDetails.add(new ImageDetails(null, exifIFD.getContent(), exifIFD.getDesc(), 3));
+                        contents.add(new ItemContent(exifIFD.getContent(), exifIFD.getDesc(), 3));
                     }
                 }
                 Message message = mHandler.obtainMessage(0, position, mAdapters.get(position).getItemCount() - 1,
-                        mImageDetails);
+                        contents);
                 mHandler.sendMessage(message);
             }
         }

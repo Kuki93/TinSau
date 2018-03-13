@@ -1,96 +1,70 @@
 package com.example.helpme.mvpandroid.entity.image;
 
+import android.graphics.Rect;
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import java.util.List;
+
 /**
  * @Created by helpme on 2018/2/13.
  * @Description
  */
-public class ImageDetails {
+public class ImageDetails implements Parcelable {
     
-    private String photoUrl;
-    private String content;
-    private String desc;
-    private int width;
-    private int height;
-    private int type;
-    private int favorite;
+    private List<ItemContent> items;
+   
+    private long imgId;
     
-    public ImageDetails(String photoUrl, int favorite) {
-        this.photoUrl = photoUrl;
-        this.favorite = favorite;
+    public ImageDetails(List<ItemContent> items, long imgId) {
+        this.items = items;
+        this.imgId = imgId;
     }
     
-    public ImageDetails(int type) {
-        this.type = type;
+    public List<ItemContent> getItems() {
+        return items;
     }
     
-    public ImageDetails(String photoUrl, String content, String desc, int type,int width,int height) {
-        this.photoUrl = photoUrl;
-        this.content = content;
-        this.desc = desc;
-        this.type = type;
-        this.width = width;
-        this.height = height;
+    public void setItems(List<ItemContent> items) {
+        this.items = items;
     }
     
-    public ImageDetails(String photoUrl, String content, String desc, int type) {
-        this.photoUrl = photoUrl;
-        this.content = content;
-        this.desc = desc;
-        this.type = type;
-    }
-    public String getPhotoUrl() {
-        return photoUrl;
+    public long getImgId() {
+        return imgId;
     }
     
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
+    public void setImgId(long imgId) {
+        this.imgId = imgId;
     }
     
-    public String getContent() {
-        return content;
+    @Override
+    public int describeContents() {
+        return 0;
     }
     
-    public void setContent(String content) {
-        this.content = content;
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(this.items);
+        dest.writeLong(this.imgId);
     }
     
-    public String getDesc() {
-        return desc;
+    public ImageDetails() {
     }
     
-    public void setDesc(String desc) {
-        this.desc = desc;
+    protected ImageDetails(Parcel in) {
+        this.items = in.createTypedArrayList(ItemContent.CREATOR);
+        this.imgId = in.readLong();
     }
     
-    public int getWidth() {
-        return width;
-    }
-    
-    public void setWidth(int width) {
-        this.width = width;
-    }
-    
-    public int getHeight() {
-        return height;
-    }
-    
-    public void setHeight(int height) {
-        this.height = height;
-    }
-    
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int type) {
-        this.type = type;
-    }
-    
-    public int getFavorite() {
-        return favorite;
-    }
-    
-    public void setFavorite(int favorite) {
-        this.favorite = favorite;
-    }
+    public static final Creator<ImageDetails> CREATOR = new Creator<ImageDetails>() {
+        @Override
+        public ImageDetails createFromParcel(Parcel source) {
+            return new ImageDetails(source);
+        }
+        
+        @Override
+        public ImageDetails[] newArray(int size) {
+            return new ImageDetails[size];
+        }
+    };
 }

@@ -55,7 +55,6 @@ public class BallPulseIndicator extends Indicator {
         int[] delays = new int[]{120, 240, 360};
         for (int i = 0; i < 3; i++) {
             final int index = i;
-            Log.d("sfsafasfas", "onCreateAnimators" + 111);
             ValueAnimator scaleAnim = ValueAnimator.ofFloat(1, 0.3f, 1);
             
             scaleAnim.setDuration(750);

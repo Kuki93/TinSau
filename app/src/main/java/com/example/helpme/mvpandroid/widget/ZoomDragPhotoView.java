@@ -37,12 +37,12 @@ public class ZoomDragPhotoView extends PhotoView {
     private int MAX_TRANSLATE_Y;
     private int MAX_SCALE_Y;
     
-    private final static long DURATION = 300;
+    private static long DURATION = 500;
     private boolean canFinish = false;
     
     //is event on PhotoView
     private boolean isTouchEvent = false;
-    private int position;
+    private boolean init;
     private ImageContract.OnDragPhototListener mOnDragPhototListener;
     
     public void setMAX_TRANSLATE_Y(int MAX_TRANSLATE_Y) {
@@ -51,11 +51,6 @@ public class ZoomDragPhotoView extends PhotoView {
     
     public void setMAX_SCALE_Y(int MAX_SCALE_Y) {
         this.MAX_SCALE_Y = MAX_SCALE_Y;
-    }
-    
-    
-    public void setPosition(int position) {
-        this.position = position;
     }
     
     public void setOnDragPhototListener(ImageContract.OnDragPhototListener onDragPhototListener) {
@@ -72,6 +67,7 @@ public class ZoomDragPhotoView extends PhotoView {
     
     public ZoomDragPhotoView(Context context, AttributeSet attr, int defStyle) {
         super(context, attr, defStyle);
+        init = true;
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
     
@@ -81,10 +77,11 @@ public class ZoomDragPhotoView extends PhotoView {
         super.onSizeChanged(w, h, oldw, oldh);
         mWidth = w;
         mHeight = h;
-        MAX_TRANSLATE_Y = DensityUtils.dip2px(getContext(), 150);
+        MAX_TRANSLATE_Y = DensityUtils.dip2px(getContext(), 120);
         MAX_SCALE_Y = DensityUtils.getScreenHeight(getContext()) / 2 + mHeight / 2;
-        if (mOnDragPhototListener != null) {
-            AddParentObserver(mOnDragPhototListener.getParentViewGroup(), mOnDragPhototListener.onReleaseExitAnim());
+        if (mOnDragPhototListener != null && init) {
+            init = false;
+            AddParentObserver(mOnDragPhototListener.onReleaseExitAnim());
         }
     }
     
@@ -110,7 +107,7 @@ public class ZoomDragPhotoView extends PhotoView {
                     mTranslateY = moveY - mDownY;
                     //in viewpager
                     if ((mTranslateY >= mTouchSlop && Math.abs(mTranslateX) < mTouchSlop || isTouchEvent) && event
-                            .getPointerCount() == 1) {
+                            .getPointerCount() == 1 && mOnDragPhototListener.isAllowSwipe()) {
                         if (!isTouchEvent) {
                             isTouchEvent = true;
                             if (mOnDragPhototListener != null)
@@ -246,10 +243,10 @@ public class ZoomDragPhotoView extends PhotoView {
     }
     
     private ValueAnimator getScaleXAnimation(float targetScaleX) {
-        return getScaleXAnimation(targetScaleX, false);
+        return getScaleXAnimation(targetScaleX, false, null);
     }
     
-    private ValueAnimator getScaleXAnimation(float targetScaleX, final boolean callback) {
+    private ValueAnimator getScaleXAnimation(float targetScaleX, final boolean callback, final Rect rect) {
         final ValueAnimator animator = ValueAnimator.ofFloat(mScaleX, targetScaleX);
         animator.setDuration(DURATION);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -268,7 +265,7 @@ public class ZoomDragPhotoView extends PhotoView {
             @Override
             public void onAnimationEnd(Animator animator) {
                 if (mOnDragPhototListener != null && callback)
-                    mOnDragPhototListener.onEndExitAnim();
+                    mOnDragPhototListener.onEndExitAnim(rect);
                 animator.removeAllListeners();
             }
             
@@ -311,19 +308,51 @@ public class ZoomDragPhotoView extends PhotoView {
         mMinScale = minScale;
     }
     
-    public void finishAnimationCallBack(Rect rect) {
-        float scaleX = rect.width() * 1.0f / mWidth;
-        float scaleY = rect.height() * 1.0f / mHeight;
-        float translateX = rect.left - getLeft() + (rect.width() - mWidth) * 1.0f / 2;
-        float translateY = rect.top - getTop() + (rect.height() - mHeight) * 1.0f / 2;
-        getScaleXAnimation(scaleX, true).start();
-        getScaleYAnimation(scaleY, true).start();
-        getAlphaAnimation(0, true).start();
-        getTranslateXAnimation(translateX, true).start();
-        getTranslateYAnimation(translateY, true).start();
+    private void getNotNullRect() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long time = System.currentTimeMillis();
+                long lastTime = time;
+                Rect rect = mOnDragPhototListener.onReleaseExitAnim();
+                while (rect == null) {
+                    rect = mOnDragPhototListener.onReleaseExitAnim();
+                    lastTime = System.currentTimeMillis();
+                    if (lastTime - time > DURATION) {
+                        rect = mOnDragPhototListener.getDefaultRect();
+                        break;
+                    }
+                }
+                DURATION = Math.max(1, DURATION - (lastTime - time));
+                finishAnimationCallBack(rect);
+                DURATION = 500;
+            }
+        }).start();
     }
     
-    private void AddParentObserver(final ViewGroup viewGroup, final Rect rect) {
+    public void finishAnimationCallBack(final Rect rect) {
+        if (rect == null) {
+            getNotNullRect();
+            return;
+        }
+        post(new Runnable() {
+            @Override
+            public void run() {
+                float scaleX = rect.width() * 1.0f / mWidth;
+                float scaleY = rect.height() * 1.0f / mHeight;
+                float translateX = rect.left - getLeft() + (rect.width() - mWidth) * 1.0f / 2;
+                float translateY = rect.top - getTop() + (rect.height() - mHeight) * 1.0f / 2;
+                getScaleXAnimation(scaleX, true, rect).start();
+                getScaleYAnimation(scaleY, true).start();
+                getAlphaAnimation(0, true).start();
+                getTranslateXAnimation(translateX, true).start();
+                getTranslateYAnimation(translateY, true).start();
+            }
+        });
+    }
+    
+    private void AddParentObserver(final Rect rect) {
+        final ViewGroup viewGroup = (ViewGroup) getParent();
         if (viewGroup == null || rect == null)
             return;
         viewGroup.getViewTreeObserver()
@@ -368,7 +397,7 @@ public class ZoomDragPhotoView extends PhotoView {
                 setX((Float) valueAnimator.getAnimatedValue());
             }
         });
-        translateXAnimator.setDuration(500);
+        translateXAnimator.setDuration(DURATION);
         translateXAnimator.start();
         
         ValueAnimator translateYAnimator = ValueAnimator.ofFloat(getY(), mTranslationY);
@@ -378,7 +407,7 @@ public class ZoomDragPhotoView extends PhotoView {
                 setY((Float) valueAnimator.getAnimatedValue());
             }
         });
-        translateYAnimator.setDuration(500);
+        translateYAnimator.setDuration(DURATION);
         translateYAnimator.start();
         
         ValueAnimator scaleYAnimator = ValueAnimator.ofFloat(mScaleY, 1);
@@ -388,7 +417,7 @@ public class ZoomDragPhotoView extends PhotoView {
                 setScaleY((Float) valueAnimator.getAnimatedValue());
             }
         });
-        scaleYAnimator.setDuration(500);
+        scaleYAnimator.setDuration(DURATION);
         scaleYAnimator.start();
         
         ValueAnimator scaleXAnimator = ValueAnimator.ofFloat(mScaleX, 1);
@@ -398,7 +427,7 @@ public class ZoomDragPhotoView extends PhotoView {
                 setScaleX((Float) valueAnimator.getAnimatedValue());
             }
         });
-        scaleXAnimator.setDuration(500);
+        scaleXAnimator.setDuration(DURATION);
         scaleXAnimator.start();
     }
 }

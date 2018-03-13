@@ -3,16 +3,13 @@ package com.example.helpme.mvpandroid.contract;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
-import android.view.ViewGroup;
 
 import com.example.helpme.mvp.view.BaseMvpView;
-import com.example.helpme.mvpandroid.entity.image.FeedList;
-import com.example.helpme.mvpandroid.entity.image.ImageDetails;
+import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.example.helpme.mvpandroid.module.home.MainActivity;
 import com.example.helpme.mvpandroid.module.image.CategoryActivity;
 import com.xiaopo.flying.puzzle.PuzzlePiece;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +20,7 @@ import java.util.Map;
 public interface ImageContract {
     
     interface OnItemPieceSelectedListener {
-        void onPieceSelected(PuzzlePiece piece, int position, int itemPosition, ArrayList<Rect> rects);
+        void onPieceSelected(PuzzlePiece piece, int position, int itemPosition, Rect rect);
     }
     
     interface OnItemChildClickListener {
@@ -33,27 +30,55 @@ public interface ImageContract {
     }
     
     interface OnDragPhototListener {
-        
-        @NonNull
-        ViewGroup getParentViewGroup();
-        
+        /**
+         * 开始下滑时
+         */
         void onStartSlide();
-        
+    
+        /**
+         * 滑动过程中
+         * @param Alpha
+         */
         void onKeepSlideing(int Alpha);
-        
-        @NonNull
+    
+        /**
+         * 触发退出条件并开始退出动画，并返回目标位置rect
+         * @return
+         */
         Rect onReleaseExitAnim();
-        
+    
+        /**
+         * 退出的过程中
+         * @param Alpha
+         */
         void onUpdateExitAnim(int Alpha);
-        
-        void onEndExitAnim();
-        
+    
+        /**
+         * 动画结束，执行finish
+         * @param rect
+         */
+        void onEndExitAnim(Rect rect);
+    
+        /**
+         * 是否开启点击退出
+         * @return
+         */
         boolean onTapExit();
+    
+        /**
+         * 当获取的rect为空时的默认rect
+         * @return
+         */
+        @NonNull
+        Rect getDefaultRect();
+    
+    
+        boolean isAllowSwipe();
     }
     
     interface ImageRecommendView extends BaseMvpView<MainActivity> {
         
-        void onRefreshView(List<FeedList> feedLists, boolean refresh);
+        void onRefreshView(List<PhotoGroup> mPhotoGroups, boolean refresh, boolean noMore);
         
         void onMoveToActivity(Intent intent);
         
@@ -69,7 +94,7 @@ public interface ImageContract {
     
     interface ImageCategoryView extends BaseMvpView<CategoryActivity> {
         
-        void onRefreshView(List<FeedList> feedLists, List<ImageDetails> mData, boolean refresh);
+        void onRefreshView(List<PhotoGroup> mPhotoGroups, boolean refresh);
         
         void onMoveToActivity(Intent intent);
         

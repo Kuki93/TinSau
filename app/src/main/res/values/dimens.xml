@@ -89,6 +89,7 @@
 
     <dimen name="font_size_36">36sp</dimen>
 
+    <dimen name="font_size_48">48sp</dimen>
     <!-- ******************************Widget******************************* -->
 
 

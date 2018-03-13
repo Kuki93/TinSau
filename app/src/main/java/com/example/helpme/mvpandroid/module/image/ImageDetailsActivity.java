@@ -9,8 +9,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,10 +26,17 @@ import com.example.helpme.mvpandroid.adapter.PhotoViewPagerAdapter;
 import com.example.helpme.mvpandroid.base.BaseActivity;
 import com.example.helpme.mvpandroid.base.WebActivity;
 import com.example.helpme.mvpandroid.contract.ImageContract;
+import com.example.helpme.mvpandroid.entity.image.MessageEvent;
 import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
+import com.example.helpme.mvpandroid.utils.DensityUtils;
 import com.example.helpme.mvpandroid.widget.PhotoViewPager;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -54,61 +62,101 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
     FrameLayout layout;
     
     private PhotoViewPagerAdapter mAdapter;
-    private PhotoGroup mPhotoGroup;
-    private String content;
-    private ArrayList<Rect> mRects;
+    private ArrayList<PhotoGroup> mPhotoGroups;
+    private List<Rect> mRects;
+    private List<Integer> nums;
+    private boolean nomore;
+    private boolean isloading;
     
     private boolean show;
-    private int index = 0;
+    private int count;
+    private int indexByAll;  // 在所有组中的第几个
+    private int indexByGroup;  //在第某组的第几个
+    private int groupIndex; //在第几组
+    private int lastIndex = -1;
+    private int flag;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_details);
         ButterKnife.bind(this);
+        EventBus.getDefault().register(this);
         mPhotoViewPager.addOnPageChangeListener(this);
         more.setOnClickListener(this);
         close.setOnClickListener(this);
         icon.setOnClickListener(this);
-        mPhotoGroup = getIntent().getParcelableExtra(GlobalConfig.IMAGE_DETAIL);
-        mRects = getIntent().getParcelableArrayListExtra("rects");
-        if (mPhotoGroup.getTitle() != null) {
-            if (mPhotoGroup.getContent() != null)
-                content = mPhotoGroup.getTitle() + "·" + mPhotoGroup.getContent();
-            else
-                content = mPhotoGroup.getTitle();
-        } else {
-            content = "";
+        flag = getIntent().getIntExtra("flag", 0);
+        indexByAll = getIntent().getIntExtra("indexByAll", 0);
+        indexByGroup = getIntent().getIntExtra("indexByGroup", 0);
+        groupIndex = getIntent().getIntExtra("groupIndex", 0);
+        mPhotoGroups = getIntent().getParcelableArrayListExtra(GlobalConfig.IMAGE_DETAIL);
+        mRects = new ArrayList<>();
+        nums = new ArrayList<>();
+        for (PhotoGroup mPhotoGroup : mPhotoGroups) {
+            count += mPhotoGroup.getImages().size();
+            nums.add(count);
+            mRects.addAll(mPhotoGroup.getRects());
         }
-        name.setText(mPhotoGroup.getName());
-        RequestOptions options = new RequestOptions();
-        Glide.with(this).load(mPhotoGroup.getIconUrl()).apply(options.error(R.drawable.ic_default_icon).
-                placeholder(R.drawable.ic_default_icon).transform(new CircleCrop())).into(icon);
-        
-        final int position = mPhotoGroup.getIndex();
-        mAdapter = new PhotoViewPagerAdapter(this, mPhotoGroup);
+        mAdapter = new PhotoViewPagerAdapter(mPhotoGroups, this, nums, count);
         mAdapter.setOnDragPhototListener(this);
         mAdapter.setOnItemChildClickListener(this);
         mPhotoViewPager.setAdapter(mAdapter);
-        int size = mPhotoGroup.getUrls().size();
-        mPhotoViewPager.setOffscreenPageLimit(size > 2 ? 2 : 1);
+        mPhotoViewPager.setCurrentItem(indexByAll);
+        mPhotoViewPager.setOffscreenPageLimit(2);
         show = true;
-        mPhotoViewPager.setCurrentItem(position);
-        index = position;
-        if (position == 0)
-            desc.setText(1 + "/" + size + "  " + content);
+        nomore = false;
+        if (indexByAll == 0)
+            changeTitle();
     }
     
+    private void changeTitle() {
+        String content;
+        int size = getGroupByPosition(indexByAll).getImages().size();
+        if (getGroupByPosition(indexByAll).getTitle() != null) {
+            if (getGroupByPosition(indexByAll).getContent() != null)
+                content = getGroupByPosition(indexByAll).getTitle() + "·" + getGroupByPosition(indexByAll).getContent();
+            else
+                content = getGroupByPosition(indexByAll).getTitle();
+        } else {
+            content = "";
+        }
+        name.setText(getGroupByPosition(indexByAll).getName());
+        RequestOptions options = new RequestOptions();
+        Glide.with(this).load(getGroupByPosition(indexByAll).getIconUrl()).apply(options.error(R.drawable.ic_default_icon).
+                placeholder(R.drawable.ic_default_icon).transform(new CircleCrop())).into(icon);
+        desc.setText((indexByGroup + 1) + "/" + size + "  " + content);
+    }
+    
+    private PhotoGroup getGroupByPosition(int position) {
+        if (lastIndex == position)
+            return mPhotoGroups.get(groupIndex);
+        int count = nums.size();
+        for (int i = 0; i < count; i++) {
+            if (position < nums.get(i)) {
+                if (i == 0)
+                    indexByGroup = position;
+                else
+                    indexByGroup = position - nums.get(i - 1);
+                groupIndex = i;
+                lastIndex = position;
+                return mPhotoGroups.get(i);
+            }
+        }
+        return null;
+    }
     
     @Override
     public void onClick(View v) {
-        if (v == close)
-            finish();
-        else if (v == more) {
+        if (v == close) {
+            onBackNewRectEvent(null);
+            EventBus.getDefault().post(new MessageEvent.SlideBackEvent(groupIndex, indexByGroup, flag));
+            mAdapter.getPhotoView(indexByAll).finishAnimationCallBack(onReleaseExitAnim());
+        } else if (v == more) {
             
         } else {
             Intent intent = new Intent(this, WebActivity.class);
-            intent.putExtra("url", mPhotoGroup.getHomeUrl());
+            intent.putExtra("url", getGroupByPosition(indexByAll).getSiteUrl());
             startActivity(intent);
         }
     }
@@ -129,14 +177,19 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
     
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-        
     }
     
     @Override
-    public void onPageSelected(int position) {
-        index = position;
-        String text = String.valueOf(position + 1) + "/" + mPhotoGroup.getUrls().size() + "  " + content;
-        desc.setText(text);
+    public void onPageSelected(int index) {
+        indexByAll = index;
+        changeTitle();
+        if (nomore || isloading)
+            return;
+        int n = mAdapter.getCount() - indexByAll;
+        if (n < 12) {
+            isloading = true;
+            EventBus.getDefault().post(new MessageEvent.Empty(flag));
+        }
     }
     
     @Override
@@ -174,13 +227,41 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
     
     @NonNull
     @Override
-    public ViewGroup getParentViewGroup() {
-        return mPhotoViewPager;
+    public Rect getDefaultRect() {
+        if (mPhotoGroups.get(groupIndex).getRect() == null) {
+            Rect rect = mPhotoGroups.get(0).getRect();
+            if (rect == null) {
+                rect = new Rect();
+                rect.left = 0;
+                rect.top = 0;
+                rect.right = DensityUtils.getScreenWidth(this);
+            }
+            rect.bottom = rect.top + 200;
+            return rect;
+        } else
+            return mPhotoGroups.get(groupIndex).getRect();
+    }
+    
+    @Override
+    public boolean isAllowSwipe() {
+        RecyclerView mRecyclerView = mAdapter.getPhotoRecyclerView(indexByAll);
+        if (mRecyclerView != null)
+            return getScollYDistance(mRecyclerView) == 0;
+        else
+            return false;
+    }
+    
+    public int getScollYDistance(RecyclerView mRecyclerView) {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+        int position = layoutManager.findFirstVisibleItemPosition();
+        View firstVisiableChildView = layoutManager.findViewByPosition(position);
+        int itemHeight = firstVisiableChildView.getHeight();
+        return (position) * itemHeight - firstVisiableChildView.getTop();
     }
     
     @Override
     public void onStartSlide() {
-        
+        EventBus.getDefault().post(new MessageEvent.SlideBackEvent(groupIndex, indexByGroup, flag));
     }
     
     @Override
@@ -192,11 +273,14 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
         layout.setBackgroundColor(Color.argb(alpha, red, green, blue));
     }
     
-    @NonNull
     @Override
     public Rect onReleaseExitAnim() {
-        int size = mRects.size();
-        return mRects.get(index % size);
+        int size;
+        if (indexByGroup >= 4)
+            size = indexByAll - indexByGroup + 3;
+        else
+            size = indexByAll;
+        return mRects.get(size);
     }
     
     @Override
@@ -205,7 +289,7 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
     }
     
     @Override
-    public void onEndExitAnim() {
+    public void onEndExitAnim(final Rect rect) {
         new Handler().post(new Runnable() {
             @Override
             public void run() {
@@ -222,12 +306,38 @@ public class ImageDetailsActivity extends BaseActivity implements View.OnClickLi
     
     @Override
     public void onBackPressed() {
-        mAdapter.getPhotoAdaper(index).finishAnimationCallBack(onReleaseExitAnim());
+        onBackNewRectEvent(null);
+        EventBus.getDefault().post(new MessageEvent.SlideBackEvent(groupIndex, indexByGroup, flag));
+        mAdapter.getPhotoView(indexByAll).finishAnimationCallBack(onReleaseExitAnim());
+    }
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAddDataEvent(MessageEvent.AddNewDataEvent event) {
+        isloading = false;
+        nomore = !event.more;
+        for (PhotoGroup mPhotoGroup : event.newData) {
+            count += mPhotoGroup.getImages().size();
+            nums.add(count);
+            mRects.addAll(mPhotoGroup.getRects());
+        }
+        mPhotoGroups.addAll(event.newData);
+        mAdapter.addNewData(mPhotoGroups, count);
+    }
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBackNewRectEvent(Rect rect) {
+        int size;
+        if (indexByGroup >= 4)
+            size = indexByAll - indexByGroup + 3;
+        else
+            size = indexByAll;
+        mRects.set(size, rect);
     }
     
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mAdapter.onCloseHandler();
+        EventBus.getDefault().unregister(this);
     }
 }

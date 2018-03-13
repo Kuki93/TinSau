@@ -1,24 +1,35 @@
 package com.example.helpme.mvpandroid.module.image;
 
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.example.helpme.mvp.factory.CreatePresenter;
+import com.example.helpme.mvpandroid.GlobalConfig;
 import com.example.helpme.mvpandroid.R;
 import com.example.helpme.mvpandroid.adapter.TagCategoryAdapter;
 import com.example.helpme.mvpandroid.base.LazyMvpFragment;
 import com.example.helpme.mvpandroid.contract.ImageContract;
-import com.example.helpme.mvpandroid.entity.image.FeedList;
-import com.example.helpme.mvpandroid.entity.image.ImageDetails;
+import com.example.helpme.mvpandroid.entity.image.MessageEvent;
+import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.api.RefreshLayout;
 import com.scwang.smartrefresh.layout.listener.OnLoadmoreListener;
 import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -69,7 +80,6 @@ public class ImageCategoryFragment extends LazyMvpFragment<ImageContract.ImageCa
     TextView error;
     
     TagCategoryAdapter mAdapter;
-    List<FeedList> mFeedLists;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -88,6 +98,7 @@ public class ImageCategoryFragment extends LazyMvpFragment<ImageContract.ImageCa
     @Override
     protected void onInitViewAndData(View view) {
         ButterKnife.bind(this, view);
+        EventBus.getDefault().register(this);
         StaggeredGridLayoutManager mLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager
                 .VERTICAL);
         mRecyclerView.setLayoutManager(mLayoutManager);
@@ -142,21 +153,39 @@ public class ImageCategoryFragment extends LazyMvpFragment<ImageContract.ImageCa
     }
     
     @Override
-    public void onRefreshView(List<FeedList> feedLists, List<ImageDetails> mData, boolean refresh) {
+    public void onRefreshView(final List<PhotoGroup> mPhotoGroups, boolean refresh) {
         if (refresh) {
             if (mAdapter == null) {
-                mFeedLists = feedLists;
-                mAdapter = new TagCategoryAdapter(R.layout.item_image_grid, mData);
+                mAdapter = new TagCategoryAdapter(R.layout.item_image_grid, mPhotoGroups);
                 mAdapter.bindToRecyclerView(mRecyclerView);
-                //   mAdapter.setOnItemClickListener();
+                mAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
+                        int indexByAll = 0;
+                        for (int i = 0; i < position; i++) {
+                            indexByAll += mAdapter.getData().get(i).getRects().size();
+                        }
+                        Intent intent = new Intent(mActivity, ImageDetailsActivity.class);
+                        Rect rect = new Rect();
+                        adapter.getViewByPosition(position, R.id.imageview).getGlobalVisibleRect(rect);
+                        PhotoGroup photoGroup = mAdapter.getData().get(position);
+                        photoGroup.getRects().set(0, rect);
+                        intent.putExtra("flag", 1);
+                        intent.putExtra("indexByAll", indexByAll);
+                        intent.putExtra("indexByGroup", 0);
+                        intent.putExtra("groupIndex", position);
+                        intent.putParcelableArrayListExtra(GlobalConfig.IMAGE_DETAIL, (ArrayList<? extends Parcelable>)
+                                mAdapter.getData());
+                        onMoveToActivity(intent);
+                        mActivity.overridePendingTransition(0, 0);
+                    }
+                });
             } else {
-                mFeedLists.clear();
-                mFeedLists.addAll(feedLists);
-                mAdapter.setNewData(mData);
+                mAdapter.setNewData(mPhotoGroups);
             }
         } else {
-            mFeedLists.addAll(feedLists);
-            mAdapter.addData(mData);
+            EventBus.getDefault().post(new MessageEvent.AddNewDataEvent((ArrayList<PhotoGroup>) mPhotoGroups, true));
+            mAdapter.addData(mPhotoGroups);
         }
         if (mAdapter.getItemCount() == 0) {
             error.setText(R.string.load_empty);
@@ -166,8 +195,7 @@ public class ImageCategoryFragment extends LazyMvpFragment<ImageContract.ImageCa
     
     @Override
     public void onMoveToActivity(Intent intent) {
-        if (intent != null)
-            startActivity(intent);
+        startActivity(intent);
     }
     
     @Override
@@ -184,5 +212,83 @@ public class ImageCategoryFragment extends LazyMvpFragment<ImageContract.ImageCa
                 mSmartRefreshLayout.finishLoadmore(success);
                 break;
         }
+    }
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBackEvent(MessageEvent.SlideBackEvent event) {
+        if (event.flag != 1 || !getUserVisibleHint())
+            return;
+        StaggeredGridLayoutManager manager = (StaggeredGridLayoutManager) mRecyclerView.getLayoutManager();
+        int[] f = manager.findFirstVisibleItemPositions(null);
+        int[] l = manager.findLastVisibleItemPositions(null);
+        if (event.position < Math.min(f[0], f[1]) || event.position > Math.max(l[0], l[1])) {
+            mRecyclerView.scrollToPosition(event.position);
+        }
+        getItemView(event);
+        
+    }
+    
+    private void getItemView(final MessageEvent.SlideBackEvent event) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                View view = mAdapter.getViewByPosition(event.position, R.id.imageview);
+                while (view == null) {
+                    view = mAdapter.getViewByPosition(event.position, R.id.imageview);
+                }
+                getNewRect(event, view);
+            }
+        }).start();
+    }
+    
+    private void getNewRect(final MessageEvent.SlideBackEvent event, final View view) {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Rect rect;
+                ImageView imageView = (ImageView) view;
+                int[] location = new int[2];
+                imageView.getLocationOnScreen(location);
+                rect = new Rect();
+                rect.left = location[0];
+                rect.top = location[1];
+                rect.right = rect.left + imageView.getWidth();
+                rect.bottom = rect.top + imageView.getHeight();
+                mRecyclerView.getLocationOnScreen(location);
+                if (rect.top < location[1]) {
+                    int dy = rect.top - location[1];
+                    mRecyclerView.scrollBy(0, dy);
+                    rect.top = location[1];
+                    rect.bottom = rect.bottom - dy;
+                    EventBus.getDefault().post(rect);
+                } else if (rect.bottom > location[1] + mRecyclerView.getHeight()) {
+                    int dy = rect.bottom - location[1] - mRecyclerView.getHeight();
+                    mRecyclerView.scrollBy(0, dy);
+                    rect.top = rect.top - dy;
+                    rect.bottom = location[1] + mRecyclerView.getHeight();
+                    EventBus.getDefault().post(rect);
+                } else {
+                    EventBus.getDefault().post(rect);
+                }
+            }
+        });
+    }
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRequestEvent(MessageEvent.Empty empty) {
+        if (empty.flag != 1 || !getUserVisibleHint())
+            return;
+        try {
+            Log.d("sdas", "onRequestEvent" + 23213);
+            getMvpPresenter().getHttpImageInfo(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 }

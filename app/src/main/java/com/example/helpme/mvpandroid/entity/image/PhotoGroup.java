@@ -1,5 +1,6 @@
 package com.example.helpme.mvpandroid.entity.image;
 
+import android.graphics.Rect;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -16,21 +17,40 @@ public class PhotoGroup implements Parcelable {
     private String iconUrl;
     private String title;
     private String content;
-    private String homeUrl;
-    private List<Long> img_ids;
-    private List<String> urls;
-    private int width;
-    private int height;
-    private int index;
+    private String opusUrl;
+    private String siteUrl;
+    private String publishDate;
+    private String type;
+    private List<ImageDetails> images;
+    private List<Rect> rects;
+    private int favorite;
+    private int typeInt = 0;
+    private int puzzHeight;
+    private int mode;
+    private float[] scales;
+    private Rect rect;
     
-    public PhotoGroup(String name, String iconUrl, String homeUrl, String title, String content,int width,int height) {
+    public void setModeAndScales(int mode, float[] scales) {
+        this.mode = mode;
+        this.scales = scales;
+    }
+    
+    public PhotoGroup(String name, String iconUrl, String opusUrl, String siteUrl,String publishDate, int index, int 
+            favorite) {
         this.name = name;
         this.iconUrl = iconUrl;
-        this.title = title;
-        this.content = content;
-        this.homeUrl = homeUrl;
-        this.width = width;
-        this.height = height;
+        this.opusUrl = opusUrl;
+        this.siteUrl = siteUrl;
+        this.publishDate = publishDate;
+        this.favorite = favorite;
+    }
+    
+    public List<Rect> getRects() {
+        return rects;
+    }
+    
+    public void setRects(List<Rect> rects) {
+        this.rects = rects;
     }
     
     public String getName() {
@@ -65,52 +85,95 @@ public class PhotoGroup implements Parcelable {
         this.content = content;
     }
     
-    public String getHomeUrl() {
-        return homeUrl;
+    public String getOpusUrl() {
+        return opusUrl;
     }
     
-    public void setHomeUrl(String homeUrl) {
-        this.homeUrl = homeUrl;
+    public void setOpusUrl(String opusUrl) {
+        this.opusUrl = opusUrl;
     }
     
-    public List<Long> getImg_ids() {
-        return img_ids;
+    public String getSiteUrl() {
+        return siteUrl;
     }
     
-    public void setImg_ids(List<Long> img_ids) {
-        this.img_ids = img_ids;
+    public void setSiteUrl(String siteUrl) {
+        this.siteUrl = siteUrl;
     }
     
-    public List<String> getUrls() {
-        return urls;
+    public String getType() {
+        return type;
     }
     
-    public void setUrls(List<String> urls) {
-        this.urls = urls;
+    public void setType(String type) {
+        this.type = type;
     }
     
-    public int getWidth() {
-        return width;
+    public String getPublishDate() {
+        return publishDate;
     }
     
-    public void setWidth(int width) {
-        this.width = width;
+    public void setPublishDate(String publishDate) {
+        this.publishDate = publishDate;
     }
     
-    public int getHeight() {
-        return height;
+    public List<ImageDetails> getImages() {
+        return images;
     }
     
-    public void setHeight(int height) {
-        this.height = height;
+    public void setImages(List<ImageDetails> images) {
+        this.images = images;
     }
     
-    public int getIndex() {
-        return index;
+    public int getFavorite() {
+        return favorite;
     }
     
-    public void setIndex(int index) {
-        this.index = index;
+    public void setFavorite(int favorite) {
+        this.favorite = favorite;
+    }
+    
+    public int getTypeInt() {
+        return typeInt;
+    }
+    
+    public void setTypeInt(int typeInt) {
+        this.typeInt = typeInt;
+    }
+    
+    public int getPuzzHeight() {
+        return puzzHeight;
+    }
+    
+    public void setPuzzHeight(int puzzHeight) {
+        this.puzzHeight = puzzHeight;
+    }
+    
+    public int getMode() {
+        return mode;
+    }
+    
+    public void setMode(int mode) {
+        this.mode = mode;
+    }
+    
+    public float[] getScales() {
+        return scales;
+    }
+    
+    public void setScales(float[] scales) {
+        this.scales = scales;
+    }
+    
+    public Rect getRect() {
+        return rect;
+    }
+    
+    public void setRect(Rect rect) {
+        this.rect = rect;
+    }
+    
+    public PhotoGroup() {
     }
     
     @Override
@@ -124,15 +187,18 @@ public class PhotoGroup implements Parcelable {
         dest.writeString(this.iconUrl);
         dest.writeString(this.title);
         dest.writeString(this.content);
-        dest.writeString(this.homeUrl);
-        dest.writeList(this.img_ids);
-        dest.writeStringList(this.urls);
-        dest.writeInt(this.width);
-        dest.writeInt(this.height);
-        dest.writeInt(this.index);
-    }
-    
-    public PhotoGroup() {
+        dest.writeString(this.opusUrl);
+        dest.writeString(this.siteUrl);
+        dest.writeString(this.publishDate);
+        dest.writeString(this.type);
+        dest.writeTypedList(this.images);
+        dest.writeTypedList(this.rects);
+        dest.writeInt(this.favorite);
+        dest.writeInt(this.typeInt);
+        dest.writeInt(this.puzzHeight);
+        dest.writeInt(this.mode);
+        dest.writeFloatArray(this.scales);
+        dest.writeParcelable(this.rect, flags);
     }
     
     protected PhotoGroup(Parcel in) {
@@ -140,13 +206,18 @@ public class PhotoGroup implements Parcelable {
         this.iconUrl = in.readString();
         this.title = in.readString();
         this.content = in.readString();
-        this.homeUrl = in.readString();
-        this.img_ids = new ArrayList<Long>();
-        in.readList(this.img_ids, Long.class.getClassLoader());
-        this.urls = in.createStringArrayList();
-        this.width = in.readInt();
-        this.height = in.readInt();
-        this.index = in.readInt();
+        this.opusUrl = in.readString();
+        this.siteUrl = in.readString();
+        this.publishDate = in.readString();
+        this.type = in.readString();
+        this.images = in.createTypedArrayList(ImageDetails.CREATOR);
+        this.rects = in.createTypedArrayList(Rect.CREATOR);
+        this.favorite = in.readInt();
+        this.typeInt = in.readInt();
+        this.puzzHeight = in.readInt();
+        this.mode = in.readInt();
+        this.scales = in.createFloatArray();
+        this.rect = in.readParcelable(Rect.class.getClassLoader());
     }
     
     public static final Creator<PhotoGroup> CREATOR = new Creator<PhotoGroup>() {

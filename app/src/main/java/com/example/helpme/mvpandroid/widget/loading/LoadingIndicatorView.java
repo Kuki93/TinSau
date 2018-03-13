@@ -54,7 +54,7 @@ public class LoadingIndicatorView extends View {
         mMinHeight = 72;
         mMaxHeight = 72;
         
-        mIndicatorColor = context.getResources().getColor(R.color.colorGray);
+        mIndicatorColor = context.getResources().getColor(R.color.colorYellow);
         setIndicator(DEFAULT_INDICATOR);
     }
     

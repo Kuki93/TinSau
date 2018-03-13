@@ -2,6 +2,10 @@ package com.example.helpme.mvpandroid;
 
 import android.app.Application;
 
+import com.sumitanantwar.eventbus_poc.MyEventBusIndex;
+
+import org.greenrobot.eventbus.EventBus;
+
 import cn.bingoogolapple.swipebacklayout.BGASwipeBackHelper;
 
 /**
@@ -13,7 +17,9 @@ public class HelpmeApp extends Application {
     public void onCreate() {
         super.onCreate();
         BGASwipeBackHelper.init(this, null);
-        GlobalConfig.initUrl(getApplicationContext());
+        EventBus.builder()
+                .addIndex(new MyEventBusIndex())
+                .installDefaultEventBus();
     }
 }
 

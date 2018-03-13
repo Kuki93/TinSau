@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -15,17 +16,22 @@ import com.example.helpme.mvpandroid.adapter.ImageRecommendAdapter;
 import com.example.helpme.mvpandroid.base.LazyMvpFragment;
 import com.example.helpme.mvpandroid.base.WebActivity;
 import com.example.helpme.mvpandroid.contract.ImageContract;
-import com.example.helpme.mvpandroid.entity.image.FeedList;
+import com.example.helpme.mvpandroid.entity.image.MessageEvent;
+import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.example.helpme.mvpandroid.module.home.MainActivity;
 import com.example.helpme.mvpandroid.utils.DensityUtils;
 import com.example.helpme.mvpandroid.widget.SpaceItemDecoration;
 import com.example.helpme.mvpandroid.widget.refresh.LoadMoreView;
-import com.example.helpme.mvpandroid.widget.refresh.RefreshHeadView;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.api.RefreshLayout;
 import com.scwang.smartrefresh.layout.listener.OnLoadmoreListener;
 import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
 import com.xiaopo.flying.puzzle.PuzzlePiece;
+import com.xiaopo.flying.puzzle.PuzzleView;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,13 +96,14 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
     @Override
     protected void onInitViewAndData(View view) {
         ButterKnife.bind(this, view);
+        EventBus.getDefault().register(this);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.addItemDecoration(new SpaceItemDecoration(DensityUtils.dip2px(getContext(), 15)));
         getMvpPresenter().getBaseInfo();
     }
-
+    
     @Override
     protected void onAddListerers() {
         mSmartRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
@@ -139,14 +146,14 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
     }
     
     @Override
-    public void onPieceSelected(PuzzlePiece piece, int position, int itemPosition, ArrayList<Rect> rects) {
-        FeedList feedList = mAdapter.getData().get(itemPosition);
-        if (!feedList.getType().equals("multi-photo")) {
+    public void onPieceSelected(PuzzlePiece piece, int position, int itemPosition, Rect rect) {
+        PhotoGroup photoGroup = mAdapter.getData().get(itemPosition);
+        if (!photoGroup.getType().equals("multi-photo")) {
             Intent intent = new Intent(mActivity, WebActivity.class);
-            intent.putExtra("url", feedList.getUrl());
+            intent.putExtra("url", photoGroup.getOpusUrl());
             startActivity(intent);
         } else {
-            getMvpPresenter().readyAction(mAdapter, position, itemPosition, rects);
+            getMvpPresenter().readyAction(mAdapter, position, itemPosition, rect);
         }
     }
     
@@ -158,11 +165,11 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
             
         } else {
             Intent intent = new Intent(mActivity, WebActivity.class);
-            FeedList feedList = mAdapter.getData().get(position);
+            PhotoGroup photoGroup = mAdapter.getData().get(position);
             if (view.getId() == R.id.siteIcon) {
-                intent.putExtra("url", feedList.getSite().getUrl());
+                intent.putExtra("url", photoGroup.getSiteUrl());
             } else {
-                intent.putExtra("url", feedList.getUrl());
+                intent.putExtra("url", photoGroup.getOpusUrl());
             }
             startActivity(intent);
         }
@@ -174,18 +181,19 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
     }
     
     @Override
-    public void onRefreshView(List<FeedList> feedLists, boolean refresh) {
+    public void onRefreshView(List<PhotoGroup> mPhotoGroups, boolean refresh, boolean noMore) {
         if (refresh) {
             if (mAdapter == null) {
-                mAdapter = new ImageRecommendAdapter(feedLists);
+                mAdapter = new ImageRecommendAdapter(mPhotoGroups);
                 mAdapter.bindToRecyclerView(mRecyclerView);
                 mAdapter.setOnItemPieceSelectedListener(ImageRecommendFragment.this);
                 mAdapter.setOnItemChildClickListener(this);
             } else {
-                mAdapter.setNewData(feedLists);
+                mAdapter.setNewData(mPhotoGroups);
             }
         } else {
-            mAdapter.addData(feedLists);
+            EventBus.getDefault().post(new MessageEvent.AddNewDataEvent((ArrayList<PhotoGroup>) mPhotoGroups, noMore));
+            mAdapter.addData(mPhotoGroups);
         }
         if (mAdapter.getItemCount() == 0) {
             error.setText(R.string.load_empty);
@@ -195,8 +203,7 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
     
     @Override
     public void onMoveToActivity(Intent intent) {
-        if (intent != null)
-            startActivity(intent);
+        startActivity(intent);
     }
     
     @Override
@@ -218,5 +225,95 @@ public class ImageRecommendFragment extends LazyMvpFragment<ImageContract.ImageR
                 mSmartRefreshLayout.finishLoadmore(success);
                 break;
         }
+    }
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBackEvent(MessageEvent.SlideBackEvent event) {
+        if (event.flag != 0)
+            return;
+        LinearLayoutManager linearLayoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+        int f = linearLayoutManager.findFirstVisibleItemPosition();
+        int l = linearLayoutManager.findLastVisibleItemPosition();
+        if (event.position < f || event.position > l) {
+            mRecyclerView.scrollToPosition(event.position);
+        }
+        int size = mAdapter.getItem(event.position).getImages().size();
+        if (size > 1) {
+            if (event.itemIndex >= 4)
+                event.itemIndex = 3;
+            getItemView(event, R.id.puzzle);
+        } else {
+            getItemView(event, R.id.imageview);
+        }
+    }
+    
+    private void getNewRect(final MessageEvent.SlideBackEvent event, final View view) {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Rect rect;
+                if (view instanceof PuzzleView) {
+                    PuzzleView mPuzzleView = (PuzzleView) view;
+                    rect = mPuzzleView.getRectByPosition(event.itemIndex);
+                } else {
+                    ImageView imageView = (ImageView) view;
+                    int[] location = new int[2];
+                    imageView.getLocationOnScreen(location);
+                    rect = new Rect();
+                    rect.left = location[0];
+                    rect.top = location[1];
+                    rect.right = rect.left + imageView.getWidth();
+                    rect.bottom = rect.top + imageView.getHeight();
+                }
+                int location[] = new int[2];
+                mRecyclerView.getLocationOnScreen(location);
+                if (rect.top < location[1]) {
+                    int dy = rect.top - location[1];
+                    mRecyclerView.scrollBy(0, dy);
+                    rect.top = location[1];
+                    rect.bottom = rect.bottom - dy;
+                    EventBus.getDefault().post(rect);
+                } else if (rect.bottom > location[1] + mRecyclerView.getHeight()) {
+                    int dy = rect.bottom - location[1] - mRecyclerView.getHeight();
+                    mRecyclerView.scrollBy(0, dy);
+                    rect.top = rect.top - dy;
+                    rect.bottom = location[1] + mRecyclerView.getHeight();
+                    EventBus.getDefault().post(rect);
+                } else {
+                    EventBus.getDefault().post(rect);
+                }
+            }
+        });
+    }
+    
+    private void getItemView(final MessageEvent.SlideBackEvent event, final int id) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                View view = mAdapter.getViewByPosition(event.position, id);
+                while (view == null) {
+                    view = mAdapter.getViewByPosition(event.position, id);
+                }
+                getNewRect(event, view);
+            }
+        }).start();
+    }
+    
+    
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRequestEvent(MessageEvent.Empty empty) {
+        if (empty.flag != 0)
+            return;
+        try {
+            getMvpPresenter().getHttpImageInfo(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 }

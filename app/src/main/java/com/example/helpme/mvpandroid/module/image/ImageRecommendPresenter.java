@@ -3,6 +3,7 @@ package com.example.helpme.mvpandroid.module.image;
 import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.os.Parcelable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +16,9 @@ import com.example.helpme.mvpandroid.adapter.ImageRecommendAdapter;
 import com.example.helpme.mvpandroid.contract.ImageContract;
 import com.example.helpme.mvpandroid.entity.image.FeedList;
 import com.example.helpme.mvpandroid.entity.image.ImageBean;
+import com.example.helpme.mvpandroid.entity.image.ImageDetails;
 import com.example.helpme.mvpandroid.entity.image.Images;
+import com.example.helpme.mvpandroid.entity.image.ItemContent;
 import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.example.helpme.mvpandroid.module.home.MainActivity;
 import com.example.helpme.mvpandroid.utils.DensityUtils;
@@ -72,21 +75,58 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
             });
         } else {
             final ImageBean bean = (ImageBean) data;
+            final List<PhotoGroup> photoGroups = new ArrayList<>();
             if (bean.getResult().equals("SUCCESS")) {
                 List<FeedList> feedLists = bean.getFeedList();
                 post_id = feedLists.get(feedLists.size() - 1).getPost_id();
                 for (FeedList feedList : feedLists) {
+                    PhotoGroup group = new PhotoGroup(feedList.getSite().getName(), feedList.getSite().getIcon(), feedList
+                            .getUrl(), feedList.getSite().getUrl(), feedList.getPublished_at(), position, feedList
+                            .getFavorites());
+                    group.setType(feedList.getType());
+                    List<ImageDetails> imageDetails = new ArrayList<>();
                     int count = feedList.getImage_count();
-                    List<Images> images = feedList.getImages();
                     count = count > 4 ? 4 : count;
+                    List<Rect> rects = new ArrayList<>();
+                    if (count > 0)
+                        for (Images image : feedList.getImages()) {
+                            String url = "http://photo.tuchong.com/" + image.getUser_id() + "/f/" + image.getImg_id() + "" +
+                                    ".jpg";
+                            List<ItemContent> contents = new ArrayList<>();
+                            contents.add(new ItemContent(url, image.getWidth(), image.getHeight(), 0));
+                            ImageDetails details = new ImageDetails(contents, image.getImg_id());
+                            imageDetails.add(details);
+                            rects.add(null);
+                        }
+                    else {
+                        if (feedList.getTitle_image()!=null) {
+                            String url = feedList.getTitle_image().get(0).getUrl();
+                            List<ItemContent> contents = new ArrayList<>();
+                            contents.add(new ItemContent(url, feedList.getTitle_image().get(0).getWidth(), feedList
+                                    .getTitle_image().get(0).getHeight(), 0));
+                            ImageDetails details = new ImageDetails(contents, 0);
+                            imageDetails.add(details);
+                            rects.add(null);
+                        } else {
+                            String url = "";
+                            List<ItemContent> contents = new ArrayList<>();
+                            contents.add(new ItemContent(url, 300, 200, 0));
+                            ImageDetails details = new ImageDetails(contents, 0);
+                            imageDetails.add(details);
+                            rects.add(null);
+                        }
+                    }
+                    group.setRects(rects);
+                    group.setImages(imageDetails);
                     long width = DensityUtils.getScreenWidth(mActivity);
                     if (count <= 1) {
                         if (count == 1)
-                            feedList.setHeight((int) (images.get(0).getHeight() * width / images.get(0).getWidth()));
+                            group.setPuzzHeight((int) (imageDetails.get(0).getItems().get(0).getHeight() * width /
+                                    imageDetails.get(0).getItems().get(0).getWidth()));
                         else
-                            feedList.setHeight((int) (feedList.getTitle_image().get(0).getHeight() * width / feedList
+                            group.setPuzzHeight((int) (feedList.getTitle_image().get(0).getHeight() * width / feedList
                                     .getTitle_image().get(0).getWidth()));
-                        feedList.setTypeInt(1);
+                        group.setTypeInt(1);
                     } else {
                         float[] scales;
                         double a, b;
@@ -95,21 +135,23 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                         switch (count) {
                             case 2:
                                 scales = new float[1];
-                                a = images.get(0).getHeight() * images.get(1).getWidth() * 1.0000d;
-                                b = images.get(0).getHeight() * images.get(1).getWidth() * 1.0000d + images.get(1)
-                                        .getHeight() *
-                                        images.get(0).getWidth() * 1.0000d;
+                                a = imageDetails.get(0).getItems().get(0).getHeight() * imageDetails.get(1).getItems().get
+                                        (0).getWidth() * 1.0000d;
+                                b = imageDetails.get(0).getItems().get(0).getHeight() * imageDetails.get(1).getItems().get
+                                        (0).getWidth() * 1.0000d + imageDetails.get(1).getItems().get(0).getHeight() *
+                                        imageDetails.get(0).getItems().get(0).getWidth() * 1.0000d;
                                 scales[0] = (float) (a / b);
-                                feedList.setHeight((int) (images.get(0).getHeight() * width / images.get(0).getWidth() +
-                                        images.get(1).getHeight() * width / images.get(1).getWidth()));
-                                feedList.setModeAndScales(0, scales);
+                                group.setPuzzHeight((int) (imageDetails.get(0).getItems().get(0).getHeight() * width /
+                                        imageDetails.get(0).getItems().get(0).getWidth() + imageDetails.get(1).getItems()
+                                        .get(0).getHeight() * width / imageDetails.get(1).getItems().get(0).getWidth()));
+                                group.setModeAndScales(0, scales);
                                 break;
                             case 3:
                                 w = new long[3];
                                 h = new long[3];
                                 for (int i = 0; i < 3; i++) {
-                                    w[i] = images.get(i).getWidth();
-                                    h[i] = images.get(i).getHeight();
+                                    w[i] = imageDetails.get(i).getItems().get(0).getWidth();
+                                    h[i] = imageDetails.get(i).getItems().get(0).getHeight();
                                 }
                                 scales = new float[2];
                                 m = sqrt(getVariance(w));
@@ -119,31 +161,31 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                     b = h[1] + h[2];
                                     scales[0] = (float) (h[0] * 1.0000d / a);
                                     scales[1] = (float) (h[1] * 1.0000d / b);
-                                    feedList.setHeight((int) (width * h[0] / w[0] + width * h[1] / w[1] + width * h[2] /
+                                    group.setPuzzHeight((int) (width * h[0] / w[0] + width * h[1] / w[1] + width * h[2] /
                                             w[2]));
-                                    feedList.setModeAndScales(1, scales);
+                                    group.setModeAndScales(1, scales);
                                 } else {
                                     if (m >= n) {
                                         a = h[0] * width / w[0];
                                         b = 1.0000d * h[1] * h[2] * width / (1.0000d * w[1] * h[2] + 1.0000d * w[2] *
                                                 h[1]);
                                         scales[0] = (float) (a / (a + b));
-                                        feedList.setHeight((int) (a + b));
+                                        group.setPuzzHeight((int) (a + b));
                                         a = w[1] * h[2];
                                         b = w[1] * h[2] + w[2] * h[1];
                                         scales[1] = (float) (a * 1.0000d / b);
-                                        feedList.setModeAndScales(2, scales);
+                                        group.setModeAndScales(2, scales);
                                     } else {
                                         a = 0.0001d * w[0] * h[1] * w[2] + 0.0001d * w[0] * w[1] * h[2];
                                         b = 0.0001d * h[0] * w[1] * w[2] + 0.0001d * w[0] * h[1] * w[2] + 0.0001d *
                                                 w[0] *
                                                 w[1] * h[2];
                                         scales[0] = (float) (a / b);
-                                        feedList.setHeight((int) (scales[0] * width / w[0] * h[0]));
+                                        group.setPuzzHeight((int) (scales[0] * width / w[0] * h[0]));
                                         a = w[2] * h[1];
                                         b = w[2] * h[1] + w[1] * h[2];
                                         scales[1] = (float) (a * 1.0000d / b);
-                                        feedList.setModeAndScales(3, scales);
+                                        group.setModeAndScales(3, scales);
                                     }
                                 }
                                 break;
@@ -151,8 +193,8 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                 w = new long[4];
                                 h = new long[4];
                                 for (int i = 0; i < 4; i++) {
-                                    w[i] = images.get(i).getWidth();
-                                    h[i] = images.get(i).getHeight();
+                                    w[i] = imageDetails.get(i).getItems().get(0).getWidth();
+                                    h[i] = imageDetails.get(i).getItems().get(0).getHeight();
                                 }
                                 if (w[0] == w[2] && w[1] == w[3] && h[0] == h[1] && h[2] == h[3]) {
                                     scales = new float[2];
@@ -160,8 +202,8 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                     b = h[0] + h[2];
                                     scales[0] = h[0] * 1.0f / (h[0] + h[2]);
                                     scales[1] = w[0] * 1.0f / (w[0] + w[1]);
-                                    feedList.setHeight((int) (width * b / a));
-                                    feedList.setModeAndScales(4, scales);
+                                    group.setPuzzHeight((int) (width * b / a));
+                                    group.setModeAndScales(4, scales);
                                 } else {
                                     scales = new float[3];
                                     m = getVariance(w);
@@ -172,14 +214,14 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                         b = h[2] * h[3] * width * 0.0001d / (w[2] * h[3] * 0.0001d + w[3] * h[2] *
                                                 0.0001d);
                                         scales[0] = (float) (a / (a + b));
-                                        feedList.setHeight((int) (a + b));
+                                        group.setPuzzHeight((int) (a + b));
                                         a = w[0] * h[1];
                                         b = w[1] * h[0] + w[0] * h[1];
                                         scales[1] = (float) (a * 1.0000d / b);
                                         a = w[2] * h[3];
                                         b = w[3] * h[2] + w[2] * h[3];
                                         scales[2] = (float) (a * 1.0000d / b);
-                                        feedList.setModeAndScales(5, scales);
+                                        group.setModeAndScales(5, scales);
                                     } else {
                                         a = w[0] * h[1] * w[2] * w[3] * 0.000001d + w[0] * w[1] * w[2] * h[3] *
                                                 0.000001d;
@@ -188,7 +230,7 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                                 w[0] * w[1] * h[2] * w[3] * 0.000001d + w[0] * w[1] * w[2] * h[3] *
                                                 0.000001d;
                                         scales[0] = (float) (a / b);
-                                        feedList.setHeight((int) (scales[0] * width / (w[0] * w[2]) * (w[2] * h[0] +
+                                        group.setPuzzHeight((int) (scales[0] * width / (w[0] * w[2]) * (w[2] * h[0] +
                                                 w[0] *
                                                         h[2])));
                                         a = w[2] * h[0];
@@ -197,17 +239,37 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
                                         a = w[3] * h[1];
                                         b = w[1] * h[3] + w[3] * h[1];
                                         scales[2] = (float) (a * 1.0000d / b);
-                                        feedList.setModeAndScales(6, scales);
+                                        group.setModeAndScales(6, scales);
                                     }
                                 }
                                 break;
                         }
                     }
+                    if (feedList.getTitle() != null && !feedList.getTitle().equals("")) {
+                        group.setTitle(feedList.getTitle());
+                        if (feedList.getExcerpt() != null && !feedList.getExcerpt().equals("")) {
+                            group.setContent(feedList.getExcerpt());
+                        } else if (feedList.getContent() != null && !feedList.getContent().equals("")) {
+                            group.setContent(feedList.getContent());
+                        } else {
+                            group.setContent(null);
+                        }
+                    } else {
+                        group.setContent(null);
+                        if (feedList.getExcerpt() != null && !feedList.getExcerpt().equals("")) {
+                            group.setTitle(feedList.getExcerpt());
+                        } else if (feedList.getContent() != null && !feedList.getContent().equals("")) {
+                            group.setTitle(feedList.getContent());
+                        } else {
+                            group.setTitle(null);
+                        }
+                    }
+                    photoGroups.add(group);
                 }
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        getMvpView().onRefreshView(bean.getFeedList(), refresh);
+                        getMvpView().onRefreshView(photoGroups, refresh,bean.getMore());
                         if (refresh)
                             getMvpView().onFinishRefresh(true, bean.getMore(), 1);
                         else {
@@ -289,42 +351,19 @@ public class ImageRecommendPresenter extends BaseMvpPresenter<MainActivity, Imag
         return x2;
     }
     
-    public void readyAction(ImageRecommendAdapter mAdapter, int position, int itemPosition, ArrayList<Rect> rects) {
-        FeedList feedList = mAdapter.getData().get(itemPosition);
-        PhotoGroup photoGroup = new PhotoGroup(feedList.getSite().getName(), feedList.getSite().getIcon(), feedList
-                .getSite().getUrl(), null, null, feedList.getImages().get(position).getWidth(), feedList.getImages
-                ().get(position).getHeight());
-        photoGroup.setIndex(position);
-        List<String> urls = new ArrayList<>();
-        List<Long> imgIds = new ArrayList<>();
-        for (Images images : feedList.getImages()) {
-            urls.add("http://photo.tuchong.com/" + images.getUser_id() + "/f/" + images.getImg_id() + ".jpg");
-            imgIds.add(images.getImg_id());
+    public void readyAction(ImageRecommendAdapter mAdapter, int indexByGroup, int groupIndex, Rect rect) {
+        int indexByAll = 0;
+        for (int i = 0; i < groupIndex; i++) {
+            indexByAll += mAdapter.getData().get(i).getRects().size();
         }
-        if (feedList.getTitle() != null && !feedList.getTitle().equals("")) {
-            photoGroup.setTitle(feedList.getTitle());
-            if (feedList.getExcerpt() != null && !feedList.getExcerpt().equals("")) {
-                photoGroup.setContent(feedList.getExcerpt());
-            } else if (feedList.getContent() != null && !feedList.getContent().equals("")) {
-                photoGroup.setContent(feedList.getContent());
-            } else {
-                photoGroup.setContent(null);
-            }
-        } else {
-            photoGroup.setContent(null);
-            if (feedList.getExcerpt() != null && !feedList.getExcerpt().equals("")) {
-                photoGroup.setTitle(feedList.getExcerpt());
-            } else if (feedList.getContent() != null && !feedList.getContent().equals("")) {
-                photoGroup.setTitle(feedList.getContent());
-            } else {
-                photoGroup.setTitle(null);
-            }
-        }
-        photoGroup.setImg_ids(imgIds);
-        photoGroup.setUrls(urls);
+        indexByAll += indexByGroup;
+        PhotoGroup photoGroup = mAdapter.getData().get(groupIndex);
+        photoGroup.getRects().set(indexByGroup, rect);
         Intent intent = new Intent();
-        intent.putParcelableArrayListExtra("rects", rects);
-        intent.putExtra(GlobalConfig.IMAGE_DETAIL, photoGroup);
+        intent.putExtra("indexByAll", indexByAll);
+        intent.putExtra("indexByGroup", indexByGroup);
+        intent.putExtra("groupIndex", groupIndex);
+        intent.putParcelableArrayListExtra(GlobalConfig.IMAGE_DETAIL, (ArrayList<? extends Parcelable>) mAdapter.getData());
         intent.setClass(mActivity, ImageDetailsActivity.class);
         getMvpView().onMoveToActivity(intent);
         mActivity.overridePendingTransition(0, 0);

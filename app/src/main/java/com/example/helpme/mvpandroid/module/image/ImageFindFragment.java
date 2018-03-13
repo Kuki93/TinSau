@@ -131,8 +131,8 @@ public class ImageFindFragment extends LazyMvpFragment<ImageContract.ImageFindVi
                         mAdapter = new HotEventRecyclerAdapter(R.layout.item_find_event, hotEvents);
                     else
                         mAdapter = new HotEventRecyclerAdapter(R.layout.item_find_event, bean.getHotEvents());
-                    mAdapter.addHeaderView(getMvpPresenter().getBannerView(bean.getBanners(), this));
-                    mAdapter.addHeaderView(getMvpPresenter().getTagView(bean.getCategories()));
+                    mAdapter.addHeaderView(getMvpPresenter().updateBannerView(bean.getBanners(), this));
+                    mAdapter.addHeaderView(getMvpPresenter().updateTagView(bean.getCategories()));
                     mAdapter.addHeaderView(getMvpPresenter().getHotEventTagView());
                     mAdapter.bindToRecyclerView(mRecyclerView);
                     getMvpPresenter().getBannerScaleHelper().onStartBannerLoop();
@@ -159,12 +159,10 @@ public class ImageFindFragment extends LazyMvpFragment<ImageContract.ImageFindVi
                 }
             }
         } else {
-            if (data instanceof FindBean) {
-                if (mAdapter == null) {
-                    mLoadingIndicatorView.hide();
-                    error.setText(R.string.load_failed);
-                    mErrorLayout.setVisibility(View.VISIBLE);
-                }
+            if (mAdapter == null) {
+                mLoadingIndicatorView.hide();
+                error.setText(R.string.load_failed);
+                mErrorLayout.setVisibility(View.VISIBLE);
             }
         }
     }

@@ -15,6 +15,7 @@ import com.example.helpme.mvpandroid.GlobalConfig;
 import com.example.helpme.mvpandroid.R;
 import com.example.helpme.mvpandroid.adapter.BannerRecyclerAdapter;
 import com.example.helpme.mvpandroid.adapter.CategoryRecyclerAdapter;
+import com.example.helpme.mvpandroid.adapter.HotEventRecyclerAdapter;
 import com.example.helpme.mvpandroid.base.WebActivity;
 import com.example.helpme.mvpandroid.contract.ImageContract;
 import com.example.helpme.mvpandroid.entity.image.Banners;
@@ -49,13 +50,6 @@ public class ImageFindPresenter extends BaseMvpPresenter<MainActivity, ImageCont
         findUrl = new StringBuilder(GlobalConfig.TU_CHONG_FIND_URL);
         eventUrl = new StringBuilder(GlobalConfig.TU_CHONG_EVENTS_URL);
         impl = new ImageModelImpl();
-    }
-    
-    public void getBaseInfo() {
-        DisplayMetrics metric = new DisplayMetrics();
-        mActivity.getWindowManager().getDefaultDisplay().getMetrics(metric);
-        findUrl.append(GlobalConfig.TU_CHONG_URL);
-        eventUrl.append(GlobalConfig.TU_CHONG_URL).append("&page=1");
     }
     
     
@@ -108,8 +102,16 @@ public class ImageFindPresenter extends BaseMvpPresenter<MainActivity, ImageCont
         });
     }
     
+    public void getBaseInfo() {
+        DisplayMetrics metric = new DisplayMetrics();
+        mActivity.getWindowManager().getDefaultDisplay().getMetrics(metric);
+        findUrl.append(GlobalConfig.TU_CHONG_URL);
+        eventUrl.append(GlobalConfig.TU_CHONG_URL).append("&page=1");
+        
+        
+    }
     
-    public View getBannerView(List<Banners> banners, Fragment fragment) {
+    public void initSkelelton(HotEventRecyclerAdapter mHotEventAdapter, Fragment fragment) {
         BannerRecyclerView mBanner = new BannerRecyclerView(mActivity);
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup
                 .LayoutParams.WRAP_CONTENT);
@@ -119,7 +121,65 @@ public class ImageFindPresenter extends BaseMvpPresenter<MainActivity, ImageCont
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mActivity, LinearLayoutManager
                 .HORIZONTAL, false);
         mBanner.setLayoutManager(linearLayoutManager);
-        final BannerRecyclerAdapter mAdapter = new BannerRecyclerAdapter(banners, fragment, new ImageContract
+        
+        final BannerRecyclerAdapter mAdapter = new BannerRecyclerAdapter(new ArrayList<Banners>(), fragment, new
+                ImageContract
+                        .OnBannerClickListener() {
+                    @Override
+                    public void onClick(int position, String url) {
+                        Intent intent = new Intent();
+                        intent.setClass(mActivity, WebActivity.class);
+                        intent.putExtra("url", url);
+                        getMvpView().onMoveToActivity(intent);
+                    }
+                });
+        mBanner.setAdapter(mAdapter);
+        // mRecyclerView绑定scale效果
+        mBannerScaleHelper = new BannerScaleHelper();
+        mBannerScaleHelper.setFirstItemPos(1200);
+        mBannerScaleHelper.attachToRecyclerView(mBanner);
+
+        
+        RecyclerView mRecyclerView = new RecyclerView(mActivity);
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup
+                .LayoutParams.WRAP_CONTENT);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(mActivity, LinearLayoutManager
+                .HORIZONTAL, false);
+        mRecyclerView.setLayoutParams(params);
+        mRecyclerView.setLayoutManager(layoutManager);
+        
+        final ArrayList<Categories> categories = new ArrayList<>();
+        CategoryRecyclerAdapter mCategoryAdapter = new CategoryRecyclerAdapter(R.layout.item_find_category, categories);
+        mCategoryAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
+                Intent intent = new Intent(mActivity, CategoryActivity.class);
+                intent.putExtra("position", position);
+                intent.putParcelableArrayListExtra(GlobalConfig.IMAGE_CATEGORIES, categories);
+                getMvpView().onMoveToActivity(intent);
+            }
+        });
+   
+        
+        mHotEventAdapter.addHeaderView(mBanner);
+        mHotEventAdapter.addHeaderView(getHotEventTagView());
+        mHotEventAdapter.addHeaderView(mRecyclerView);
+    }
+    
+    
+    public View updateBannerView(List<Banners> banners, Fragment fragment) {
+    
+        BannerRecyclerView mBanner = new BannerRecyclerView(mActivity);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup
+                .LayoutParams.WRAP_CONTENT);
+        layoutParams.width = DensityUtils.getScreenWidth(mActivity);
+        layoutParams.height = DensityUtils.getScreenWidth(mActivity) * 3 / 5;
+        mBanner.setLayoutParams(layoutParams);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mActivity, LinearLayoutManager
+                .HORIZONTAL, false);
+        mBanner.setLayoutManager(linearLayoutManager);
+        
+        final BannerRecyclerAdapter mBannerAdapter = new BannerRecyclerAdapter(banners, fragment, new ImageContract
                 .OnBannerClickListener() {
             @Override
             public void onClick(int position, String url) {
@@ -129,7 +189,7 @@ public class ImageFindPresenter extends BaseMvpPresenter<MainActivity, ImageCont
                 getMvpView().onMoveToActivity(intent);
             }
         });
-        mBanner.setAdapter(mAdapter);
+        mBanner.setAdapter(mBannerAdapter);
         // mRecyclerView绑定scale效果
         mBannerScaleHelper = new BannerScaleHelper();
         mBannerScaleHelper.setFirstItemPos(banners.size() * 300);
@@ -142,17 +202,18 @@ public class ImageFindPresenter extends BaseMvpPresenter<MainActivity, ImageCont
         return LayoutInflater.from(mActivity).inflate(R.layout.layout_find_tag, null);
     }
     
-    public View getTagView(final ArrayList<Categories> categories) {
+    public View updateTagView(final ArrayList<Categories> categories) {
         RecyclerView mRecyclerView = new RecyclerView(mActivity);
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup
                 .LayoutParams.WRAP_CONTENT);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mActivity, LinearLayoutManager
+        LinearLayoutManager layoutManager = new LinearLayoutManager(mActivity, LinearLayoutManager
                 .HORIZONTAL, false);
-        mRecyclerView.setLayoutParams(layoutParams);
-        mRecyclerView.setLayoutManager(linearLayoutManager);
-        CategoryRecyclerAdapter mAdapter = new CategoryRecyclerAdapter(R.layout.item_find_category, categories);
-        mAdapter.bindToRecyclerView(mRecyclerView);
-        mAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
+        mRecyclerView.setLayoutParams(params);
+        mRecyclerView.setLayoutManager(layoutManager);
+        
+        CategoryRecyclerAdapter mCategoryAdapter = new CategoryRecyclerAdapter(R.layout.item_find_category, categories);
+        mCategoryAdapter.bindToRecyclerView(mRecyclerView);
+        mCategoryAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
                 Intent intent = new Intent(mActivity, CategoryActivity.class);

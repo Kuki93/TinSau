@@ -20,7 +20,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:scaleType="fitXY"
-            android:src="@drawable/weather_bga"
             app:layout_constraintDimensionRatio="5:3"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -31,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/widget_size_4"
-            android:paddingTop="@dimen/widget_size_10"
+            android:paddingTop="@dimen/widget_size_13"
             android:paddingBottom="@dimen/widget_size_3"
             android:paddingRight="@dimen/widget_size_10"
             android:textColor="@color/colorBlack"
@@ -48,7 +47,7 @@
             android:paddingLeft="@dimen/widget_size_16"
             android:paddingRight="@dimen/widget_size_7"
             android:textColor="@color/colorTooltitle"
-            android:textSize="@dimen/font_size_14"
+            android:textSize="@dimen/font_size_13"
             app:layout_constraintTop_toBottomOf="@id/title" />
 
         <TextView

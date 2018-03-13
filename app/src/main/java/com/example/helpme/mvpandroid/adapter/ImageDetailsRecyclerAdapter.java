@@ -1,6 +1,7 @@
 package com.example.helpme.mvpandroid.adapter;
 
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.widget.FrameLayout;
 
 import com.bumptech.glide.Glide;
@@ -12,6 +13,7 @@ import com.chad.library.adapter.base.util.MultiTypeDelegate;
 import com.example.helpme.mvpandroid.R;
 import com.example.helpme.mvpandroid.contract.ImageContract;
 import com.example.helpme.mvpandroid.entity.image.ImageDetails;
+import com.example.helpme.mvpandroid.entity.image.ItemContent;
 import com.example.helpme.mvpandroid.utils.DensityUtils;
 import com.example.helpme.mvpandroid.widget.ZoomDragPhotoView;
 
@@ -21,24 +23,22 @@ import java.util.List;
  * @Created by helpme on 2018/2/13.
  * @Description
  */
-public class ImageDetailsRecyclerAdapter extends BaseQuickAdapter<ImageDetails, BaseViewHolder> {
+public class ImageDetailsRecyclerAdapter extends BaseQuickAdapter<ItemContent, BaseViewHolder> {
     
     private RequestOptions requestOptions;
     
     private ImageContract.OnDragPhototListener mOnDragPhototListener;
     
-    private int position;
     
     public void setOnDragPhototListener(ImageContract.OnDragPhototListener onDragPhototListener) {
         mOnDragPhototListener = onDragPhototListener;
     }
     
-    public ImageDetailsRecyclerAdapter(@Nullable List<ImageDetails> data, int position) {
+    public ImageDetailsRecyclerAdapter(@Nullable List<ItemContent> data) {
         super(data);
-        this.position = position;
-        setMultiTypeDelegate(new MultiTypeDelegate<ImageDetails>() {
+        setMultiTypeDelegate(new MultiTypeDelegate<ItemContent>() {
             @Override
-            protected int getItemType(ImageDetails entity) {
+            protected int getItemType(ItemContent entity) {
                 //根据你的实体类来判断布局类型
                 return entity.getType();
             }
@@ -54,11 +54,11 @@ public class ImageDetailsRecyclerAdapter extends BaseQuickAdapter<ImageDetails, 
         requestOptions = new RequestOptions();
         //在RequestOptions中使用Transformations
         requestOptions.placeholder(R.drawable.ic_place_img).error(R.drawable.ic_error_img).diskCacheStrategy
-                (DiskCacheStrategy.ALL).skipMemoryCache(true);
+                (DiskCacheStrategy.ALL);
     }
     
     @Override
-    protected void convert(final BaseViewHolder helper, ImageDetails item) {
+    protected void convert(final BaseViewHolder helper, ItemContent item) {
         switch (helper.getItemViewType()) {
             case 0:
                 ZoomDragPhotoView mPhotoView = helper.getView(R.id.photoview);
@@ -79,7 +79,6 @@ public class ImageDetailsRecyclerAdapter extends BaseQuickAdapter<ImageDetails, 
                 mPhotoView.setMaximumScale(3.6f);
                 if (mOnDragPhototListener != null) {
                     mPhotoView.setOnDragPhototListener(mOnDragPhototListener);
-                    mPhotoView.setPosition(position);
                 }
                 Glide.with(mContext).load(item.getPhotoUrl()).apply(requestOptions).into(mPhotoView);
                 break;

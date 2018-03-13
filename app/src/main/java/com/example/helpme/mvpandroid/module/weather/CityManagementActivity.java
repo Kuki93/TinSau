@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -50,7 +49,7 @@ public class CityManagementActivity extends AbstractMvpAppCompatActivity<CityCon
     Toolbar toolbar;
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
-
+    
     public static final int RequestCode = 102;
     
     @OnClick(R.id.fb_add)
@@ -85,12 +84,14 @@ public class CityManagementActivity extends AbstractMvpAppCompatActivity<CityCon
             case android.R.id.home:
                 WeatherCityCache mCityCache = getMvpPresenter().getCityCache();
                 if (mCityCache.getCityValues() == null || mCityCache.getCityValues().size() == 0) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setMessage("至少选择一个城市")
-                            //点击对话框以外的区域是否让对话框消失
-                            .setCancelable(true)
-                            //设置正面按钮
-                            .setPositiveButton("确定", null).show();
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                    builder.setMessage("至少选择一个城市")
+//                            //点击对话框以外的区域是否让对话框消失
+//                            .setCancelable(true)
+//                            //设置正面按钮
+//                            .setPositiveButton("确定", null).show();
+                    setResult(RESULT_CANCELED);
+                    finish();
                     break;
                 }
                 Intent intent = new Intent();
@@ -106,12 +107,14 @@ public class CityManagementActivity extends AbstractMvpAppCompatActivity<CityCon
     public void onBackPressed() {
         WeatherCityCache mCityCache = getMvpPresenter().getCityCache();
         if (mCityCache.getCityValues() == null || mCityCache.getCityValues().size() == 0) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("至少选择一个城市")
-                    //点击对话框以外的区域是否让对话框消失
-                    .setCancelable(true)
-                    //设置正面按钮
-                    .setPositiveButton("确定", null).show();
+//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//            builder.setMessage("至少选择一个城市")
+//                    //点击对话框以外的区域是否让对话框消失
+//                    .setCancelable(true)
+//                    //设置正面按钮
+//                    .setPositiveButton("确定", null).show();
+            setResult(RESULT_CANCELED);
+            finish();
             return;
         }
         Intent intent = new Intent();
@@ -165,7 +168,26 @@ public class CityManagementActivity extends AbstractMvpAppCompatActivity<CityCon
     
     @Override
     protected void setStatusBar() {
-       StatusBarUtil.setColorNoTranslucent(this, getResources().getColor(R.color.colorWhite));
+        StatusBarUtil.setColorNoTranslucent(this, getResources().getColor(R.color.colorWhite));
+    }
+    
+    @Override
+    public void onSwipeBackLayoutExecuted() {
+        if (getMvpPresenter().getCityCache().getCityValues() == null || getMvpPresenter().getCityCache().getCityValues()
+                .size() == 0) {
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//                    builder.setMessage("至少选择一个城市")
+//                            //点击对话框以外的区域是否让对话框消失
+//                            .setCancelable(true)
+//                            //设置正面按钮
+//                            .setPositiveButton("确定", null).show();
+            setResult(RESULT_CANCELED);
+        } else {
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_QUEST, getMvpPresenter().getCityCache());
+            setResult(RESULT_OK, intent);
+        }
+        super.onSwipeBackLayoutExecuted();
     }
     
     @NeedsPermission(Manifest.permission_group.LOCATION)

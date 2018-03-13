@@ -1,6 +1,7 @@
 package com.example.helpme.mvpandroid.module.image;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -10,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.example.helpme.mvpandroid.GlobalConfig;
 import com.example.helpme.mvpandroid.R;
 import com.flyco.tablayout.SlidingTabLayout;
 
@@ -45,6 +47,7 @@ public class ImageFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        GlobalConfig.initImageUrl(getContext());
     }
     
     @BindView(R.id.tablayout)
@@ -53,7 +56,7 @@ public class ImageFragment extends Fragment {
     ViewPager mViewPager;
     
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_image, container, false);

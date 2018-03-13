@@ -19,21 +19,19 @@ import com.chad.library.adapter.base.BaseViewHolder;
 import com.chad.library.adapter.base.util.MultiTypeDelegate;
 import com.example.helpme.mvpandroid.R;
 import com.example.helpme.mvpandroid.contract.ImageContract;
-import com.example.helpme.mvpandroid.entity.image.FeedList;
-import com.example.helpme.mvpandroid.entity.image.Images;
-import com.example.helpme.mvpandroid.entity.image.Site;
+import com.example.helpme.mvpandroid.entity.image.ImageDetails;
+import com.example.helpme.mvpandroid.entity.image.PhotoGroup;
 import com.example.helpme.mvpandroid.widget.ImagePuzzleLayout;
 import com.xiaopo.flying.puzzle.PuzzlePiece;
 import com.xiaopo.flying.puzzle.PuzzleView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @Created by helpme on 2018/2/11.
  * @Description
  */
-public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHolder> {
+public class ImageRecommendAdapter extends BaseQuickAdapter<PhotoGroup, BaseViewHolder> {
     
     private ImageContract.OnItemPieceSelectedListener mOnItemPieceSelectedListener;
     
@@ -42,12 +40,12 @@ public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHo
         mOnItemPieceSelectedListener = onItemPieceSelectedListener;
     }
     
-    public ImageRecommendAdapter(@Nullable List<FeedList> data) {
-        super(data);
+    public ImageRecommendAdapter(@Nullable List<PhotoGroup> datas) {
+        super(datas);
         //Step.1
-        setMultiTypeDelegate(new MultiTypeDelegate<FeedList>() {
+        setMultiTypeDelegate(new MultiTypeDelegate<PhotoGroup>() {
             @Override
-            protected int getItemType(FeedList entity) {
+            protected int getItemType(PhotoGroup entity) {
                 //根据你的实体类来判断布局类型
                 return entity.getTypeInt();
             }
@@ -59,25 +57,18 @@ public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHo
     }
     
     @Override
-    protected void convert(final BaseViewHolder helper, FeedList item) {
-        final List<Images> images = item.getImages();
-        Site site = item.getSite();
-        Glide.with(mContext).load(site.getIcon()).apply(new RequestOptions().placeholder(R.drawable.ic_default_icon)
+    protected void convert(final BaseViewHolder helper, PhotoGroup item) {
+        final List<ImageDetails> images = item.getImages();
+        Glide.with(mContext).load(item.getIconUrl()).apply(new RequestOptions().placeholder(R.drawable.ic_default_icon)
                 .error(R.drawable.ic_default_icon).transform(new CircleCrop())).into((ImageView) helper.getView(R.id
                 .siteIcon));
-        helper.setText(R.id.siteName, site.getName());
-        helper.setText(R.id.publish, item.getPublished_at());
-        if (item.getTitle() != null && !item.getTitle().trim().equals("")) {
+        helper.setText(R.id.siteName, item.getName());
+        helper.setText(R.id.publish, item.getPublishDate());
+        if (item.getTitle() != null) {
             helper.setGone(R.id.excerpt, true);
-            if (item.getExcerpt() != null && !item.getExcerpt().trim().equals("")) {
+            if (item.getContent() != null) {
                 helper.setText(R.id.excerpt, Html.fromHtml("<img src='" + R.drawable.ic_quot_mark + "'> " +
-                                "<strong><font color='black'>" + item.getTitle() + "·</font></strong>" + item
-                                .getExcerpt(),
-                        mImageGetter, null));
-            } else if (item.getContent() != null && !item.getContent().trim().equals("")) {
-                helper.setText(R.id.excerpt, Html.fromHtml("<img src='" + R.drawable.ic_quot_mark + "'> " +
-                                "<strong><font color='black'>" + item.getTitle() + "·</font></strong>" + item
-                                .getContent(),
+                                "<strong><font color='black'>" + item.getTitle() + "·</font></strong>" + item.getContent(),
                         mImageGetter, null));
             } else {
                 helper.setText(R.id.excerpt, Html.fromHtml("<img src='" + R.drawable.ic_quot_mark + "'> " +
@@ -85,11 +76,7 @@ public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHo
                         mImageGetter, null));
             }
         } else {
-            if (item.getExcerpt() != null && !item.getExcerpt().trim().equals("")) {
-                helper.setGone(R.id.excerpt, true);
-                helper.setText(R.id.excerpt, Html.fromHtml("<img src='" + R.drawable.ic_quot_mark + "'> " +
-                        "<strong><font color='black'>" + item.getExcerpt() + "</font></strong>", mImageGetter, null));
-            } else if (item.getContent() != null && !item.getContent().trim().equals("")) {
+            if (item.getContent() != null) {
                 helper.setGone(R.id.excerpt, true);
                 helper.setText(R.id.excerpt, Html.fromHtml("<img src='" + R.drawable.ic_quot_mark + "'> " +
                         "<strong><font color='black'>" + item.getContent() + "</font></strong>", mImageGetter, null));
@@ -97,8 +84,12 @@ public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHo
                 helper.setGone(R.id.excerpt, false);
             }
         }
-        helper.setText(R.id.like, item.getFavorites() + "");
-        int count = item.getImage_count();
+        helper.setText(R.id.like, item.getFavorite() + "");
+        int count = images.size();
+        if (!item.getType().equals("multi-photo"))
+            helper.setGone(R.id.imageSize, false);
+        else
+            helper.setGone(R.id.imageSize, true);
         helper.setText(R.id.imageSize, "共有" + count + "张图片");
         count = count > 4 ? 4 : count;
         helper.addOnClickListener(R.id.siteName);
@@ -110,49 +101,56 @@ public class ImageRecommendAdapter extends BaseQuickAdapter<FeedList, BaseViewHo
             case 0:
                 final PuzzleView mPuzzleView = helper.getView(R.id.puzzle);
                 ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) mPuzzleView.getLayoutParams();
-                layoutParams.height = item.getHeight();
+                layoutParams.height = item.getPuzzHeight();
                 mPuzzleView.setLayoutParams(layoutParams);
                 mPuzzleView.setTouchEnable(false);
                 mPuzzleView.setPuzzleLayout(new ImagePuzzleLayout(item.getMode(), item.getScales()));
                 for (int i = 0; i < count; i++) {
-                    loadImage(mPuzzleView, i, "http://photo.tuchong.com/" + images.get(i)
-                            .getUser_id() + "/f/" + images.get(i).getImg_id() + ".jpg");
+                    loadImage(mPuzzleView, i, images.get(i).getItems().get(0).getPhotoUrl());
                 }
                 mPuzzleView.setOnPieceSelectedListener(new PuzzleView.OnPieceSelectedListener() {
                     @Override
                     public void onPieceSelected(PuzzlePiece piece, int position) {
                         if (mOnItemPieceSelectedListener != null) {
                             mOnItemPieceSelectedListener.onPieceSelected(piece, position, helper.getLayoutPosition(),
-                                    mPuzzleView.getAllImageRects());
+                                    mPuzzleView.getRectByPosition(position));
                         }
                     }
                 });
+                if (item.getRect() ==null) {
+                    Rect rect = new Rect();
+                    mPuzzleView.getGlobalVisibleRect(rect);
+                    item.setRect(rect);
+                }
                 break;
             case 1:
                 final ImageView imageView = helper.getView(R.id.imageview);
                 layoutParams = (ConstraintLayout.LayoutParams) imageView.getLayoutParams();
-                layoutParams.height = item.getHeight();
+                layoutParams.height = item.getPuzzHeight();
                 imageView.setLayoutParams(layoutParams);
-                String url;
-                if (!item.getType().equals("multi-photo"))
-                    url = item.getTitle_image().get(0).getUrl();
-                else
-                    url = "http://photo.tuchong.com/" + images.get(0).getUser_id() + "/f/" + images.get(0)
-                            .getImg_id() + ".jpg";
-                Glide.with(mContext).load(url).apply(new RequestOptions().placeholder(R.drawable.ic_place_img).error(R
+                Glide.with(mContext).load(images.get(0).getItems().get(0).getPhotoUrl()).apply(new RequestOptions()
+                        .placeholder(R.drawable.ic_place_img).error(R
                         .drawable.ic_error_img)).into(imageView);
                 imageView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         if (mOnItemPieceSelectedListener != null) {
-                            ArrayList<Rect> rects = new ArrayList<>();
                             Rect rect = new Rect();
-                            imageView.getGlobalVisibleRect(rect);
-                            rects.add(rect);
-                            mOnItemPieceSelectedListener.onPieceSelected(null, 0, helper.getLayoutPosition(), rects);
+                            int[] location = new int[2];
+                            imageView.getLocationOnScreen(location);
+                            rect.left = location[0];
+                            rect.top = location[1];
+                            rect.right = rect.left + imageView.getWidth();
+                            rect.bottom = rect.top + imageView.getHeight();
+                            mOnItemPieceSelectedListener.onPieceSelected(null, 0, helper.getLayoutPosition(), rect);
                         }
                     }
                 });
+                if (item.getRect() ==null) {
+                    Rect rect = new Rect();
+                    imageView.getGlobalVisibleRect(rect);
+                    item.setRect(rect);
+                }
                 break;
         }
     }

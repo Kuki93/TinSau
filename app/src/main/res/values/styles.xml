@@ -15,6 +15,11 @@
         <item name="fontFamily">@font/helpme</item>
     </style>
 
+    <style name="AppTheme.SplashTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/weather_bga</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="AppTheme.Light.translucent.Fullscreen" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="fontFamily">@font/helpme</item>
         <item name="android:windowBackground" >@android:color/transparent</item>

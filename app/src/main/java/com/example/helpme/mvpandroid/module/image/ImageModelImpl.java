@@ -71,7 +71,7 @@ public class ImageModelImpl<T> implements ImageContract.ImageModel<T> {
                         data = gson.fromJson(body, classOfT);
                     } catch (JsonParseException e) {
                         i("JsonParseException", body);
-                        if (params[1] != null && params[1].equals("recommend")) {
+                        if (params.length > 1 && params[1].equals("recommend")) {
                             StringBuilder sb;
                             sb = new StringBuilder(body);
                             int index = sb.indexOf("\"title_image\":{", 0);
@@ -88,12 +88,13 @@ public class ImageModelImpl<T> implements ImageContract.ImageModel<T> {
                                 data = null;
                             }
                         }
+                        i("JsonParseException", e.getMessage());
                         error = "JsonParseException:" + e.getMessage();
                     } finally {
                         if (data == null)
                             callBcak.onFail(refresh, position, error);
                         else
-                            callBcak.onSuccess(data, refresh, position); 
+                            callBcak.onSuccess(data, refresh, position);
                     }
                 }
             }

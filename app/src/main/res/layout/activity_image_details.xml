@@ -50,6 +50,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/widget_size_12"
+            android:visibility="gone"
             android:src="@drawable/ic_more_white" />
 
         <ImageView

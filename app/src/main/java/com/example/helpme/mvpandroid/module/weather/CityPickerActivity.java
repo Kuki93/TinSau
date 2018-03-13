@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -44,12 +45,10 @@ public class CityPickerActivity extends BaseActivity {
     FlowLayout mCityFlowLayout;
     @BindView(R.id.fl_attraction)
     FlowLayout mAttractionFlowLayout;
-
-    long[] cityIds = {101010100, 101020100, 101210101, 101190101, 101190401, 101200101, 101280601, 101270101,
-            101030100, 101040100,
-            101110101, 101280101, 101130109, 101291401, 101251505, 101240203, 101290201, 101070201, 101221001,
-            101271906, 101251101,
-            101291301};
+    
+    long[] cityIds = {101010100, 101020100, 101210101, 101190101, 101190401, 101200101, 101280601, 101270101, 101040100,
+            101030100, 101110101, 101280101, 101130109, 101291401, 101251505, 101240203, 101290201, 101070201, 101221001,
+            101271906, 101251101, 101291301};
     String[] cityNames = {"北京", "上海", "杭州", "南京", "苏州", "武汉", "深圳", "成都", "重庆", "天津", "西安", "广州", "天池", "丽江",
             "凤凰", "庐山", "大理", "大连", "黄山", "九寨沟", "张家界", "香格里拉"};
     private List<AllCityCode> mAllCityCodes;
@@ -75,12 +74,12 @@ public class CityPickerActivity extends BaseActivity {
         //添加Android自带的分割线
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this, 1.5f));
         mRecyclerView.setLayoutManager(linearLayoutManager);
-       
+        
         mFilterRecyclerAdapter = new CityFilterRecyclerAdapter(R.layout.item_city_suggestion, mSuggestList);
-     //   mRecyclerView.setAdapter(mFilterRecyclerAdapter);
+        //   mRecyclerView.setAdapter(mFilterRecyclerAdapter);
         mFilterRecyclerAdapter.bindToRecyclerView(mRecyclerView);
         mFilterRecyclerAdapter.setEmptyView(R.layout.layout_empty_view);
-       
+        
         mFilterRecyclerAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
@@ -129,7 +128,7 @@ public class CityPickerActivity extends BaseActivity {
     }
     
     @Override
-    public void onSaveInstanceState(Bundle savedInstanceState){
+    public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putString("text", text);
     }
@@ -149,7 +148,7 @@ public class CityPickerActivity extends BaseActivity {
         MenuItem searchItem = menu.findItem(R.id.action_search);
         //通过MenuItem得到SearchView
         SearchView searchView = (SearchView) searchItem.getActionView();
-        EditText textView =  searchView.findViewById(R.id.search_src_text);
+        EditText textView = searchView.findViewById(R.id.search_src_text);
         searchView.onActionViewExpanded();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -194,6 +193,7 @@ public class CityPickerActivity extends BaseActivity {
         Intent intent = new Intent();
         intent.putExtra("cityName", cityName);
         intent.putExtra("cityId", cityId);
+        Log.d("rytreyr", "backOnCity" + cityName + cityId);
         setResult(RESULT_OK, intent);
         finish();
     }

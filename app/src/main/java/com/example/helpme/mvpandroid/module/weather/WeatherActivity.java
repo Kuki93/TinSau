@@ -227,8 +227,12 @@ public class WeatherActivity extends AbstractMvpAppCompatActivity<WeatherContrac
         super.onActivityResult(requestCode, resultCode, data);
         selectWapper();
         if (requestCode == ManageRequestCode) {
-            getMvpPresenter().refreshWeather((WeatherCityCache) data.getParcelableExtra(CityManagementActivity
-                    .RESULT_QUEST));
+            if (resultCode == RESULT_OK) {
+                getMvpPresenter().refreshWeather((WeatherCityCache) data.getParcelableExtra(CityManagementActivity
+                        .RESULT_QUEST));
+            }else {
+                finish();
+            }
         } else {
             if (resultCode == RESULT_OK) {
                 getMvpPresenter().addCity(new CityInfo(data.getStringExtra("cityName"), data.getExtras().getLong

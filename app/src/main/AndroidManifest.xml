@@ -39,13 +39,9 @@
 
         <activity
             android:name=".module.home.MainActivity"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.Light.NoActionBar" />
         <activity
             android:name=".module.weather.WeatherActivity"
             android:theme="@style/AppTheme.NoActionBar" />
@@ -62,8 +58,20 @@
         <activity
             android:name=".base.WebActivity"
             android:theme="@style/AppTheme.Light.NoActionBar" />
-        <activity android:name=".module.image.CategoryActivity"
+        <activity
+            android:name=".module.image.CategoryActivity"
             android:theme="@style/AppTheme.Light.NoActionBar" />
+        <activity
+            android:name=".module.home.SplashActivity"
+            android:theme="@style/AppTheme.SplashTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".module.home.AboutActivity"
+            android:label="关于Tin Sau"></activity>
     </application>
 
 </manifest>

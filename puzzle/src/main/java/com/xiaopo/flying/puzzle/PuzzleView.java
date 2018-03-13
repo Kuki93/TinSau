@@ -283,16 +283,38 @@ public class PuzzleView extends View {
                 linePaint);
     }
     
+    public Rect getRectByPosition(int position) {
+        Rect bounds = new Rect();
+        int[] location = new int[2];
+        getLocationOnScreen(location);
+        bounds.left = location[0];
+        bounds.top = location[1];
+        bounds.right = bounds.left + getWidth();
+        bounds.bottom = bounds.top + getHeight();
+        Area area = puzzlePieces.get(position).getArea();
+        Rect rect = new Rect();
+        rect.left = (int) (bounds.left + area.left());
+        rect.top = (int) (bounds.top + area.top());
+        rect.right = (int) area.right();
+        rect.bottom = (int) (bounds.top + area.bottom());
+        return rect;
+    }
+    
     public ArrayList<Rect> getAllImageRects() {
         ArrayList<Rect> rects = new ArrayList<>();
         Rect bounds = new Rect();
-        getGlobalVisibleRect(bounds);
+        int[] location = new int[2];
+        getLocationOnScreen(location);
+        bounds.left = location[0];
+        bounds.top = location[1];
+        bounds.right = bounds.left + getWidth();
+        bounds.bottom = bounds.top + getHeight();
         for (PuzzlePiece puzzlePiece : puzzlePieces) {
             Area area = puzzlePiece.getArea();
             Rect rect = new Rect();
             rect.left = (int) (bounds.left + area.left());
             rect.top = (int) (bounds.top + area.top());
-            rect.right = (int) Math.min(bounds.right, area.right());
+            rect.right = (int) area.right();
             rect.bottom = (int) (bounds.top + area.bottom());
             rects.add(rect);
         }
